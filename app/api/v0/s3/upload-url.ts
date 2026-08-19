@@ -1,58 +1,122 @@
-// /pages/api/v0/s3/upload-url.ts
-
+import { NextRequest, NextResponse } from "next/server";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 
-const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+const region = process.env.AWS_REGION;
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const bucketName = process.env.AWS_BUCKET_NAME;
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
+const s3 =
+  region && accessKeyId && secretAccessKey
+    ? new S3Client({
+        region,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      })
+    : null;
 
+export async function POST(req: NextRequest) {
   try {
-    const { fileName, fileType } = req.body;
-
-    if (!fileName || !fileType) {
-      return res.status(400).json({ message: "fileName and fileType are required" });
+    // Check AWS configuration first
+    if (
+      !region ||
+      !accessKeyId ||
+      !secretAccessKey ||
+      !bucketName
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "AWS configuration missing",
+        },
+        { status: 500 }
+      );
     }
 
-    // Check if required environment variables are present
-    if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID ||
-      !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_BUCKET_NAME) {
-      return res.status(500).json({ message: "AWS configuration missing" });
+    if (!s3) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "S3 client could not be initialized",
+        },
+        { status: 500 }
+      );
+    }
+
+    const body = await req.json();
+
+    const {
+      fileName,
+      fileType,
+    } = body as {
+      fileName?: string;
+      fileType?: string;
+    };
+
+    if (!fileName || !fileType) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "fileName and fileType are required",
+        },
+        { status: 400 }
+      );
     }
 
     const key = `uploads/${uuidv4()}_${fileName}`;
 
     const command = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME!,
+      Bucket: bucketName,
       Key: key,
       ContentType: fileType,
     });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const uploadUrl = await getSignedUrl(
+      s3,
+      command,
+      {
+        expiresIn: 3600,
+      }
+    );
 
-    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    const fileUrl =
+      `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
 
-    return res.status(200).json({
-      uploadUrl,
-      fileUrl,
-      fileName: key,
-    });
-  } catch (error) {
-    console.error("S3 upload URL generation error:", error);
-    return res.status(500).json({
-      message: "Failed to generate upload URL",
-      error: error.message
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        uploadUrl,
+        fileUrl,
+        fileName: key,
+      },
+      { status: 200 }
+    );
+  } catch (error: unknown) {
+    console.error(
+      "S3 upload URL generation error:",
+      error
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to generate upload URL";
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to generate upload URL",
+        error: message,
+      },
+      { status: 500 }
+    );
   }
 }
-

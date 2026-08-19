@@ -90,8 +90,7 @@ export default function LivePreview({
    * IMPORTANT
    * Always use the template selected from the parent.
    */
-  const activeTemplate =
-    template || card.templateId || "template-1";
+  const activeTemplate = template || card.templateId || "template-1";
 
   const templateData = getTemplateData(activeTemplate);
 
@@ -279,10 +278,7 @@ export default function LivePreview({
         "
         aria-label="More options"
       >
-        <MoreVertical
-          size={18}
-          strokeWidth={2}
-        />
+        <MoreVertical size={18} strokeWidth={2} />
       </button>
 
       {/* =====================================================
@@ -364,45 +360,36 @@ function BasicPreview() {
 
       {/* ABOUT */}
       <div className="mt-[12px] border-t border-white/[0.10] pt-[8px]">
-        <h3 className="text-[13px] font-semibold text-white">
-          About Company
-        </h3>
+        <h3 className="text-[13px] font-semibold text-white">About Company</h3>
 
         <p className="mt-[6px] text-[11px] leading-[16px] text-white/75">
-          {card.aboutCompany ||
-            "Your company information will appear here."}
+          {card.aboutCompany || "Your company information will appear here."}
         </p>
       </div>
 
       {/* SERVICES */}
       <div className="mt-[13px] border-t border-white/[0.10] pt-[12px]">
-        <h3 className="text-[13px] font-semibold text-white">
-          Our Services
-        </h3>
+        <h3 className="text-[13px] font-semibold text-white">Our Services</h3>
 
         {card.businessDetails?.services?.length ? (
           <div className="mt-[6px] space-y-[5px]">
-            {card.businessDetails.services.map(
-              (service, index) => (
-                <div
-                  key={`${service}-${index}`}
-                  className="flex items-center gap-[7px]"
-                >
-                  <span className="text-[13px] font-bold leading-none text-[#10c968]">
-                    ✓
-                  </span>
+            {card.businessDetails.services.map((service, index) => (
+              <div
+                key={`${service}-${index}`}
+                className="flex items-center gap-[7px]"
+              >
+                <span className="text-[13px] font-bold leading-none text-[#10c968]">
+                  ✓
+                </span>
 
-                  <span className="text-[11px] leading-[15px] text-white/80">
-                    {service}
-                  </span>
-                </div>
-              )
-            )}
+                <span className="text-[11px] leading-[15px] text-white/80">
+                  {service}
+                </span>
+              </div>
+            ))}
           </div>
         ) : (
-          <EmptyMessage>
-            Your services will appear here.
-          </EmptyMessage>
+          <EmptyMessage>Your services will appear here.</EmptyMessage>
         )}
       </div>
     </div>
@@ -435,10 +422,7 @@ function ContactPreview() {
 
         <div className="mt-[10px] space-y-[6px]">
           {card.mobile && (
-            <ContactRow
-              icon={<Phone size={14} />}
-              value={card.mobile}
-            />
+            <ContactRow icon={<Phone size={14} />} value={card.mobile} />
           )}
 
           {card.whatsapp && (
@@ -449,24 +433,15 @@ function ContactPreview() {
           )}
 
           {card.email && (
-            <ContactRow
-              icon={<Mail size={14} />}
-              value={card.email}
-            />
+            <ContactRow icon={<Mail size={14} />} value={card.email} />
           )}
 
           {card.website && (
-            <ContactRow
-              icon={<Globe size={14} />}
-              value={card.website}
-            />
+            <ContactRow icon={<Globe size={14} />} value={card.website} />
           )}
 
           {card.address && (
-            <ContactRow
-              icon={<MapPin size={14} />}
-              value={card.address}
-            />
+            <ContactRow icon={<MapPin size={14} />} value={card.address} />
           )}
 
           {card.googleMapLink && (
@@ -490,9 +465,7 @@ function ContactPreview() {
             </a>
           )}
 
-          <SocialIcons
-            socialLinks={card.socialLinks}
-          />
+          <SocialIcons socialLinks={card.socialLinks} />
 
           {!hasContact && (
             <EmptyMessage>
@@ -516,11 +489,11 @@ function SocialPreview() {
 
   const hasSocialLinks = Boolean(
     socialLinks.facebook?.trim() ||
-      socialLinks.instagram?.trim() ||
-      socialLinks.linkedin?.trim() ||
-      socialLinks.youtube?.trim() ||
-      socialLinks.twitter?.trim() ||
-      socialLinks.telegram?.trim()
+    socialLinks.instagram?.trim() ||
+    socialLinks.linkedin?.trim() ||
+    socialLinks.youtube?.trim() ||
+    socialLinks.twitter?.trim() ||
+    socialLinks.telegram?.trim(),
   );
 
   return (
@@ -538,31 +511,20 @@ function SocialPreview() {
       <QuickActions />
 
       <div className="mt-[14px] border-t border-white/[0.10] pt-[13px]">
-        <h3 className="text-[11px] font-semibold text-white">
-          Follow Me
-        </h3>
+        <h3 className="text-[11px] font-semibold text-white">Follow Me</h3>
 
         {hasSocialLinks ? (
           <SocialIcons socialLinks={socialLinks} />
         ) : (
-          <EmptyMessage>
-            Add your social links to see them here.
-          </EmptyMessage>
+          <EmptyMessage>Add your social links to see them here.</EmptyMessage>
         )}
 
-        <p className="mb-3 mt-6 text-xs">
-          View My Location
-        </p>
+        <p className="mb-3 mt-6 text-xs">View My Location</p>
 
         {card.address?.trim() ? (
-          <ContactRow
-            icon={<MapPin size={14} />}
-            value={card.address}
-          />
+          <ContactRow icon={<MapPin size={14} />} value={card.address} />
         ) : (
-          <EmptyMessage>
-            Add your location to see it here.
-          </EmptyMessage>
+          <EmptyMessage>Add your location to see it here.</EmptyMessage>
         )}
       </div>
     </div>
@@ -576,20 +538,18 @@ function SocialPreview() {
 function ServicesPreview() {
   const { card } = useDigitalCard();
 
-  const workingHours =
-    card.businessDetails?.workingHours ?? {
-      weekday: {
-        from: "09:00 AM",
-        to: "07:00 PM",
-      },
-      weekend: {
-        from: "10:00 AM",
-        to: "04:00 PM",
-      },
-    };
+  const workingHours = card.businessDetails?.workingHours ?? {
+    weekday: {
+      from: "09:00 AM",
+      to: "07:00 PM",
+    },
+    weekend: {
+      from: "10:00 AM",
+      to: "04:00 PM",
+    },
+  };
 
-  const services =
-    card.businessDetails?.services ?? [];
+  const services = card.businessDetails?.services ?? [];
 
   return (
     <div>
@@ -608,14 +568,10 @@ function ServicesPreview() {
       <QuickActions />
 
       <div className="mt-[13px] border-t border-white/[0.10] pt-[13px]">
-        <h3 className="text-[13px] font-semibold text-white">
-          Our Services
-        </h3>
+        <h3 className="text-[13px] font-semibold text-white">Our Services</h3>
 
         {services.length === 0 ? (
-          <EmptyMessage>
-            Your services will appear here.
-          </EmptyMessage>
+          <EmptyMessage>Your services will appear here.</EmptyMessage>
         ) : (
           <div className="mt-[6px] space-y-[5px]">
             {services.map((service, index) => (
@@ -631,9 +587,7 @@ function ServicesPreview() {
                   py-[7px]
                 "
               >
-                <span className="text-[13px] font-bold text-[#10c968]">
-                  ✓
-                </span>
+                <span className="text-[13px] font-bold text-[#10c968]">✓</span>
 
                 <p className="text-[11px] leading-[15px] text-white/80">
                   {service || "Service"}
@@ -650,10 +604,7 @@ function ServicesPreview() {
             Working Hours
           </h3>
 
-          <Clock3
-            size={14}
-            className="text-white/50"
-          />
+          <Clock3 size={14} className="text-white/50" />
         </div>
 
         <div className="mt-[5px] space-y-[5px]">
@@ -682,8 +633,7 @@ function GalleryPreview() {
   const { card } = useDigitalCard();
 
   const gallery = card.gallery ?? [];
-  const services =
-    card.businessDetails?.services ?? [];
+  const services = card.businessDetails?.services ?? [];
 
   return (
     <div>
@@ -701,33 +651,27 @@ function GalleryPreview() {
         <QuickActions />
 
         <div className="mt-[13px] border-t border-white/[0.10] pt-[12px]">
-          <h3 className="text-[13px] font-semibold text-white">
-            Our Services
-          </h3>
+          <h3 className="text-[13px] font-semibold text-white">Our Services</h3>
 
           {services.length > 0 ? (
             <div className="mt-[6px] space-y-[5px]">
-              {services.slice(0, 4).map(
-                (service, index) => (
-                  <div
-                    key={`${service}-${index}`}
-                    className="flex items-center gap-[7px]"
-                  >
-                    <span className="text-[13px] font-bold leading-none text-[#10c968]">
-                      ✓
-                    </span>
+              {services.slice(0, 4).map((service, index) => (
+                <div
+                  key={`${service}-${index}`}
+                  className="flex items-center gap-[7px]"
+                >
+                  <span className="text-[13px] font-bold leading-none text-[#10c968]">
+                    ✓
+                  </span>
 
-                    <span className="text-[11px] leading-[15px] text-white/80">
-                      {service}
-                    </span>
-                  </div>
-                )
-              )}
+                  <span className="text-[11px] leading-[15px] text-white/80">
+                    {service}
+                  </span>
+                </div>
+              ))}
             </div>
           ) : (
-            <EmptyMessage>
-              Your services will appear here.
-            </EmptyMessage>
+            <EmptyMessage>Your services will appear here.</EmptyMessage>
           )}
         </div>
 
@@ -736,9 +680,7 @@ function GalleryPreview() {
             <div className="flex items-center gap-[7px]">
               <ImageIcon size={15} />
 
-              <h3 className="text-[13px] font-semibold text-white">
-                Gallery
-              </h3>
+              <h3 className="text-[13px] font-semibold text-white">Gallery</h3>
             </div>
 
             {gallery.length > 0 && (
@@ -752,38 +694,34 @@ function GalleryPreview() {
           </div>
 
           {gallery.length === 0 ? (
-            <EmptyMessage>
-              Your gallery images will appear here.
-            </EmptyMessage>
+            <EmptyMessage>Your gallery images will appear here.</EmptyMessage>
           ) : (
             <div className="mt-[9px] grid grid-cols-3 gap-[5px]">
-              {gallery.slice(0, 3).map(
-                (image, index) => (
-                  <div
-                    key={`${image}-${index}`}
+              {gallery.slice(0, 3).map((image, index) => (
+                <div
+                  key={`${image.url}-${index}`}
+                  className="
+        h-[65px]
+        w-full
+        overflow-hidden
+        rounded-[5px]
+        bg-white/[0.05]
+      "
+                >
+                  <img
+                    src={image.url}
+                    alt={`Gallery ${index + 1}`}
                     className="
-                      h-[65px]
-                      w-full
-                      overflow-hidden
-                      rounded-[5px]
-                      bg-white/[0.05]
-                    "
-                  >
-                    <img
-                      src={image}
-                      alt={`Gallery ${index + 1}`}
-                      className="
-                        h-full
-                        w-full
-                        object-cover
-                        transition
-                        duration-200
-                        hover:scale-105
-                      "
-                    />
-                  </div>
-                )
-              )}
+          h-full
+          w-full
+          object-cover
+          transition
+          duration-200
+          hover:scale-105
+        "
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -806,8 +744,7 @@ function ActionSettingsPreview() {
   const showEmail = card.showEmail ?? true;
   const showWebsite = card.showWebsite ?? true;
   const showLocation = card.showLocation ?? true;
-  const showCustomButton =
-    card.showCustomButton ?? false;
+  const showCustomButton = card.showCustomButton ?? false;
 
   const hasPrimaryActions =
     showCall ||
@@ -837,16 +774,11 @@ function ActionSettingsPreview() {
             Contact & Actions
           </h3>
 
-          <Share2
-            size={14}
-            className="text-white/50"
-          />
+          <Share2 size={14} className="text-white/50" />
         </div>
 
         {!hasPrimaryActions ? (
-          <EmptyMessage>
-            No actions are enabled for your card.
-          </EmptyMessage>
+          <EmptyMessage>No actions are enabled for your card.</EmptyMessage>
         ) : (
           <div className="mt-[8px] grid grid-cols-4 gap-[4px]">
             {showCall && (
@@ -892,10 +824,7 @@ function ActionSettingsPreview() {
             {showCustomButton && (
               <ActionPreviewButton
                 icon={<Plus size={15} />}
-                label={
-                  card.customButtonLabel?.trim() ||
-                  "Custom Button"
-                }
+                label={card.customButtonLabel?.trim() || "Custom Button"}
                 background="#5631C8"
               />
             )}
@@ -904,44 +833,34 @@ function ActionSettingsPreview() {
       </div>
 
       <div className="mt-[10px] border-t border-white/[0.10] pt-[12px]">
-        <h3 className="text-[13px] font-semibold text-white">
-          Our Services
-        </h3>
+        <h3 className="text-[13px] font-semibold text-white">Our Services</h3>
 
         {card.businessDetails?.services?.length ? (
           <div className="mt-[6px] space-y-[5px]">
-            {card.businessDetails.services.map(
-              (service, index) => (
-                <div
-                  key={`${service}-${index}`}
-                  className="flex items-center gap-[7px]"
-                >
-                  <span className="text-[13px] font-bold leading-none text-[#10c968]">
-                    ✓
-                  </span>
+            {card.businessDetails.services.map((service, index) => (
+              <div
+                key={`${service}-${index}`}
+                className="flex items-center gap-[7px]"
+              >
+                <span className="text-[13px] font-bold leading-none text-[#10c968]">
+                  ✓
+                </span>
 
-                  <span className="text-[11px] leading-[15px] text-white/80">
-                    {service}
-                  </span>
-                </div>
-              )
-            )}
+                <span className="text-[11px] leading-[15px] text-white/80">
+                  {service}
+                </span>
+              </div>
+            ))}
           </div>
         ) : (
-          <EmptyMessage>
-            Your services will appear here.
-          </EmptyMessage>
+          <EmptyMessage>Your services will appear here.</EmptyMessage>
         )}
       </div>
 
       <div className="mt-[12px] border-t border-white/[0.10] pt-[13px]">
-        <h3 className="text-[11px] font-semibold text-white">
-          Follow Me
-        </h3>
+        <h3 className="text-[11px] font-semibold text-white">Follow Me</h3>
 
-        <SocialIcons
-          socialLinks={socialLinks}
-        />
+        <SocialIcons socialLinks={socialLinks} />
       </div>
     </div>
   );
@@ -961,8 +880,7 @@ function FullPreview() {
   const showEmail = card.showEmail ?? true;
   const showWebsite = card.showWebsite ?? true;
   const showLocation = card.showLocation ?? true;
-  const showCustomButton =
-    card.showCustomButton ?? false;
+  const showCustomButton = card.showCustomButton ?? false;
 
   const hasPrimaryActions =
     showCall ||
@@ -992,16 +910,11 @@ function FullPreview() {
             Contact & Actions
           </h3>
 
-          <Share2
-            size={14}
-            className="text-white/50"
-          />
+          <Share2 size={14} className="text-white/50" />
         </div>
 
         {!hasPrimaryActions ? (
-          <EmptyMessage>
-            No actions are enabled for your card.
-          </EmptyMessage>
+          <EmptyMessage>No actions are enabled for your card.</EmptyMessage>
         ) : (
           <div className="mt-[4px] grid grid-cols-4 gap-[4px]">
             {showCall && (
@@ -1047,10 +960,7 @@ function FullPreview() {
             {showCustomButton && (
               <ActionPreviewButton
                 icon={<Plus size={15} />}
-                label={
-                  card.customButtonLabel?.trim() ||
-                  "Custom Button"
-                }
+                label={card.customButtonLabel?.trim() || "Custom Button"}
                 background="#5631C8"
               />
             )}
@@ -1059,44 +969,34 @@ function FullPreview() {
       </div>
 
       <div className="mt-[8px] border-t border-white/[0.10] pt-[12px]">
-        <h3 className="text-[13px] font-semibold text-white">
-          Our Services
-        </h3>
+        <h3 className="text-[13px] font-semibold text-white">Our Services</h3>
 
         {card.businessDetails?.services?.length ? (
           <div className="mt-[6px] space-y-[5px]">
-            {card.businessDetails.services.map(
-              (service, index) => (
-                <div
-                  key={`${service}-${index}`}
-                  className="flex items-center gap-[7px]"
-                >
-                  <span className="text-[13px] font-bold leading-none text-[#10c968]">
-                    ✓
-                  </span>
+            {card.businessDetails.services.map((service, index) => (
+              <div
+                key={`${service}-${index}`}
+                className="flex items-center gap-[7px]"
+              >
+                <span className="text-[13px] font-bold leading-none text-[#10c968]">
+                  ✓
+                </span>
 
-                  <span className="text-[11px] leading-[15px] text-white/80">
-                    {service}
-                  </span>
-                </div>
-              )
-            )}
+                <span className="text-[11px] leading-[15px] text-white/80">
+                  {service}
+                </span>
+              </div>
+            ))}
           </div>
         ) : (
-          <EmptyMessage>
-            Your services will appear here.
-          </EmptyMessage>
+          <EmptyMessage>Your services will appear here.</EmptyMessage>
         )}
       </div>
 
       <div className="mt-[8px] border-t border-white/[0.10] pt-[13px]">
-        <h3 className="text-[11px] font-semibold text-white">
-          Follow Me
-        </h3>
+        <h3 className="text-[11px] font-semibold text-white">Follow Me</h3>
 
-        <SocialIcons
-          socialLinks={socialLinks}
-        />
+        <SocialIcons socialLinks={socialLinks} />
       </div>
     </div>
   );
@@ -1175,12 +1075,7 @@ function QuickActions() {
       />
 
       <QuickAction
-        icon={
-          <MessageCircle
-            size={17}
-            strokeWidth={2.5}
-          />
-        }
+        icon={<MessageCircle size={17} strokeWidth={2.5} />}
         label="WhatsApp"
         background="#13b95c"
       />
@@ -1312,18 +1207,11 @@ function SocialIcons({
 
     let finalUrl = url.trim();
 
-    if (
-      !finalUrl.startsWith("http://") &&
-      !finalUrl.startsWith("https://")
-    ) {
+    if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = `https://${finalUrl}`;
     }
 
-    window.open(
-      finalUrl,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    window.open(finalUrl, "_blank", "noopener,noreferrer");
   };
 
   const items = [
@@ -1331,77 +1219,46 @@ function SocialIcons({
       value: socialLinks?.facebook,
       label: "Facebook",
       className: "bg-[#1877F2]",
-      content: (
-        <span className="text-[20px] font-bold leading-none">
-          f
-        </span>
-      ),
+      content: <span className="text-[20px] font-bold leading-none">f</span>,
     },
     {
       value: socialLinks?.instagram,
       label: "Instagram",
-      className:
-        "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#FCAF45]",
-      content: (
-        <span className="text-[20px] leading-none">
-          ◎
-        </span>
-      ),
+      className: "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#FCAF45]",
+      content: <span className="text-[20px] leading-none">◎</span>,
     },
     {
       value: socialLinks?.linkedin,
       label: "LinkedIn",
       className: "bg-[#0A66C2]",
-      content: (
-        <span className="text-[18px] font-bold leading-none">
-          in
-        </span>
-      ),
+      content: <span className="text-[18px] font-bold leading-none">in</span>,
     },
     {
       value: socialLinks?.youtube,
       label: "YouTube",
       className: "bg-[#FF0000]",
-      content: (
-        <span className="text-[18px] leading-none">
-          ▶
-        </span>
-      ),
+      content: <span className="text-[18px] leading-none">▶</span>,
     },
     {
       value: socialLinks?.twitter,
       label: "X",
       className: "bg-black",
       content: (
-        <span className="text-[20px] font-semibold leading-none">
-          𝕏
-        </span>
+        <span className="text-[20px] font-semibold leading-none">𝕏</span>
       ),
     },
     {
       value: socialLinks?.telegram,
       label: "Telegram",
       className: "bg-[#229ED9]",
-      content: (
-        <Send
-          size={17}
-          fill="white"
-          strokeWidth={2}
-        />
-      ),
+      content: <Send size={17} fill="white" strokeWidth={2} />,
     },
   ];
 
-  const visibleItems = items.filter(
-    (item) => item.value?.trim()
-  );
+  const visibleItems = items.filter((item) => item.value?.trim());
 
   if (visibleItems.length === 0) {
-    return (
-      <EmptyMessage>
-        Add your social links to see them here.
-      </EmptyMessage>
-    );
+    return <EmptyMessage>Add your social links to see them here.</EmptyMessage>;
   }
 
   return (
@@ -1410,9 +1267,7 @@ function SocialIcons({
         <button
           key={item.label}
           type="button"
-          onClick={() =>
-            openSocialLink(item.value)
-          }
+          onClick={() => openSocialLink(item.value)}
           aria-label={item.label}
           className={`
             flex
@@ -1454,16 +1309,12 @@ function WorkingHourRow({
 }) {
   return (
     <div className="flex items-center justify-between rounded-md bg-white/[0.06] px-[9px] py-[8px]">
-      <span className="text-[10px] font-medium text-white/70">
-        {day}
-      </span>
+      <span className="text-[10px] font-medium text-white/70">{day}</span>
 
       <span className="text-[10px] font-medium text-white/90">
         {from}
 
-        <span className="mx-[4px] text-white/40">
-          -
-        </span>
+        <span className="mx-[4px] text-white/40">-</span>
 
         {to}
       </span>
@@ -1475,13 +1326,7 @@ function WorkingHourRow({
    CONTACT ROW
 ========================================================= */
 
-function ContactRow({
-  icon,
-  value,
-}: {
-  icon: React.ReactNode;
-  value: string;
-}) {
+function ContactRow({ icon, value }: { icon: React.ReactNode; value: string }) {
   return (
     <div className="flex items-center gap-[8px] rounded-md bg-white/[0.07] px-[8px] py-[7px]">
       <div
@@ -1511,16 +1356,10 @@ function ContactRow({
    EMPTY MESSAGE
 ========================================================= */
 
-function EmptyMessage({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function EmptyMessage({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-[10px] rounded-md bg-white/[0.05] px-[10px] py-[12px] text-center">
-      <p className="text-[10px] leading-[15px] text-white/50">
-        {children}
-      </p>
+      <p className="text-[10px] leading-[15px] text-white/50">{children}</p>
     </div>
   );
 }

@@ -348,18 +348,20 @@ export default function Sidebar({ open, onClose, links }: SidebarProps) {
 
   // Mobile
   return (
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: 250,
-          border: "none",
-        },
-      }}
-    >
-      {sidebarContent}
-    </Drawer>
+   <Drawer
+  anchor="left"
+  open={open}
+  onClose={onClose}
+  slotProps={{
+    paper: {
+      sx: {
+        width: 250,
+        border: "none",
+      },
+    },
+  }}
+>
+  {sidebarContent}
+</Drawer>
   );
 }

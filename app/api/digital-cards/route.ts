@@ -73,9 +73,7 @@ const defaultSocialLinks = {
    NORMALIZE GALLERY
 ========================================================= */
 
-function normalizeGallery(
-  gallery: unknown
-): GalleryItem[] {
+function normalizeGallery(gallery: unknown): GalleryItem[] {
   if (!Array.isArray(gallery)) {
     return [];
   }
@@ -83,38 +81,23 @@ function normalizeGallery(
   return gallery
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        !Array.isArray(item)
+        Boolean(item) && typeof item === "object" && !Array.isArray(item),
     )
     .map((item) => ({
-      url:
-        typeof item.url === "string"
-          ? item.url
-          : "",
+      url: typeof item.url === "string" ? item.url : "",
 
-      publicId:
-        typeof item.publicId === "string"
-          ? item.publicId
-          : "",
+      publicId: typeof item.publicId === "string" ? item.publicId : "",
 
-      name:
-        typeof item.name === "string"
-          ? item.name
-          : "",
+      name: typeof item.name === "string" ? item.name : "",
     }))
-    .filter(
-      (item) => item.url.trim().length > 0
-    );
+    .filter((item) => item.url.trim().length > 0);
 }
 
 /* =========================================================
    NORMALIZE VIDEOS
 ========================================================= */
 
-function normalizeVideos(
-  videos: unknown
-): VideoItem[] {
+function normalizeVideos(videos: unknown): VideoItem[] {
   if (!Array.isArray(videos)) {
     return [];
   }
@@ -122,33 +105,23 @@ function normalizeVideos(
   return videos
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        !Array.isArray(item)
+        Boolean(item) && typeof item === "object" && !Array.isArray(item),
     )
-    .map((item) => ({
-      url:
-        typeof item.url === "string"
-          ? item.url
-          : "",
+    .map(
+      (item): VideoItem => ({
+        url: typeof item.url === "string" ? item.url : "",
 
-      platform:
-        item.platform === "vimeo"
-          ? "vimeo"
-          : "youtube",
-    }))
-    .filter(
-      (item) => item.url.trim().length > 0
-    );
+        platform: item.platform === "vimeo" ? "vimeo" : "youtube",
+      }),
+    )
+    .filter((item) => item.url.trim().length > 0);
 }
 
 /* =========================================================
    NORMALIZE CERTIFICATES
 ========================================================= */
 
-function normalizeCertificates(
-  certificates: unknown
-): CertificateItem[] {
+function normalizeCertificates(certificates: unknown): CertificateItem[] {
   if (!Array.isArray(certificates)) {
     return [];
   }
@@ -156,35 +129,19 @@ function normalizeCertificates(
   return certificates
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        !Array.isArray(item)
+        Boolean(item) && typeof item === "object" && !Array.isArray(item),
     )
     .map((item) => ({
-      url:
-        typeof item.url === "string"
-          ? item.url
-          : "",
+      url: typeof item.url === "string" ? item.url : "",
 
-      publicId:
-        typeof item.publicId === "string"
-          ? item.publicId
-          : "",
+      publicId: typeof item.publicId === "string" ? item.publicId : "",
 
-      name:
-        typeof item.name === "string"
-          ? item.name
-          : "",
+      name: typeof item.name === "string" ? item.name : "",
 
-      size:
-        typeof item.size === "number"
-          ? item.size
-          : 0,
+      size: typeof item.size === "number" ? item.size : 0,
     }))
     .filter(
-      (item) =>
-        item.url.trim().length > 0 &&
-        item.name.trim().length > 0
+      (item) => item.url.trim().length > 0 && item.name.trim().length > 0,
     );
 }
 
@@ -193,9 +150,7 @@ function normalizeCertificates(
    CREATE DIGITAL CARD
 ========================================================= */
 
-export async function POST(
-  request: NextRequest
-) {
+export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
@@ -205,17 +160,13 @@ export async function POST(
        VALIDATE BODY
     ===================================================== */
 
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body)
-    ) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
       return NextResponse.json(
         {
           success: false,
           message: "Invalid request body",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -236,27 +187,21 @@ export async function POST(
         weekday: {
           ...defaultBusinessDetails.workingHours.weekday,
 
-          ...(body.businessDetails?.workingHours
-            ?.weekday || {}),
+          ...(body.businessDetails?.workingHours?.weekday || {}),
         },
 
         weekend: {
           ...defaultBusinessDetails.workingHours.weekend,
 
-          ...(body.businessDetails?.workingHours
-            ?.weekend || {}),
+          ...(body.businessDetails?.workingHours?.weekend || {}),
         },
       },
 
-      services:
-        Array.isArray(
-          body.businessDetails?.services
-        )
-          ? body.businessDetails.services.filter(
-              (service: unknown) =>
-                typeof service === "string"
-            )
-          : [],
+      services: Array.isArray(body.businessDetails?.services)
+        ? body.businessDetails.services.filter(
+            (service: unknown) => typeof service === "string",
+          )
+        : [],
     };
 
     /* =====================================================
@@ -273,8 +218,7 @@ export async function POST(
        GALLERY
     ===================================================== */
 
-    const gallery =
-      normalizeGallery(body.gallery);
+    const gallery = normalizeGallery(body.gallery);
 
     /* =====================================================
        MAX 12 GALLERY IMAGES
@@ -284,10 +228,9 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "You can upload up to 12 gallery images",
+          message: "You can upload up to 12 gallery images",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -295,129 +238,87 @@ export async function POST(
        VIDEOS
     ===================================================== */
 
-    const videos =
-      normalizeVideos(body.videos);
+    const videos = normalizeVideos(body.videos);
 
     /* =====================================================
        CERTIFICATES
     ===================================================== */
 
-    const certificates =
-      normalizeCertificates(
-        body.certificates
-      );
+    const certificates = normalizeCertificates(body.certificates);
 
     /* =====================================================
        CREATE DIGITAL CARD
     ===================================================== */
 
-    const card =
-      await DigitalCard.create({
-        /* USER */
+    const card = await DigitalCard.create({
+      /* USER */
 
-        userId:
-          typeof body.userId === "string"
-            ? body.userId
-            : null,
+      userId: typeof body.userId === "string" ? body.userId : null,
 
-        /* BASIC */
+      /* BASIC */
 
-        fullName:
-          typeof body.fullName === "string"
-            ? body.fullName
-            : "",
+      fullName: typeof body.fullName === "string" ? body.fullName : "",
 
-        companyName:
-          typeof body.companyName === "string"
-            ? body.companyName
-            : "",
+      companyName: typeof body.companyName === "string" ? body.companyName : "",
 
-        designation:
-          typeof body.designation === "string"
-            ? body.designation
-            : "",
+      designation: typeof body.designation === "string" ? body.designation : "",
 
-        profilePhoto:
-          typeof body.profilePhoto === "string"
-            ? body.profilePhoto
-            : "",
+      profilePhoto:
+        typeof body.profilePhoto === "string" ? body.profilePhoto : "",
 
-        tagline:
-          typeof body.tagline === "string"
-            ? body.tagline
-            : "",
+      tagline: typeof body.tagline === "string" ? body.tagline : "",
 
-        aboutCompany:
-          typeof body.aboutCompany === "string"
-            ? body.aboutCompany
-            : "",
+      aboutCompany:
+        typeof body.aboutCompany === "string" ? body.aboutCompany : "",
 
-        /* CONTACT */
+      /* CONTACT */
 
-        mobile:
-          typeof body.mobile === "string"
-            ? body.mobile
-            : "",
+      mobile: typeof body.mobile === "string" ? body.mobile : "",
 
-        whatsapp:
-          typeof body.whatsapp === "string"
-            ? body.whatsapp
-            : "",
+      whatsapp: typeof body.whatsapp === "string" ? body.whatsapp : "",
 
-        email:
-          typeof body.email === "string"
-            ? body.email
-            : "",
+      email: typeof body.email === "string" ? body.email : "",
 
-        website:
-          typeof body.website === "string"
-            ? body.website
-            : "",
+      website: typeof body.website === "string" ? body.website : "",
 
-        address:
-          typeof body.address === "string"
-            ? body.address
-            : "",
+      address: typeof body.address === "string" ? body.address : "",
 
-        googleMapLink:
-          typeof body.googleMapLink === "string"
-            ? body.googleMapLink
-            : "",
+      googleMapLink:
+        typeof body.googleMapLink === "string" ? body.googleMapLink : "",
 
-        /* BUSINESS */
+      /* BUSINESS */
 
-        businessDetails,
+      businessDetails,
 
-        /* SOCIAL */
+      /* SOCIAL */
 
-        socialLinks,
+      socialLinks,
 
-        /* =================================================
+      /* =================================================
            GALLERY
         ================================================= */
 
-        gallery,
+      gallery,
 
-        /* =================================================
+      /* =================================================
            VIDEOS
         ================================================= */
 
-        videos,
+      videos,
 
-        /* =================================================
+      /* =================================================
            CERTIFICATES
         ================================================= */
 
-        certificates,
+      certificates,
 
-        /* DESIGN */
+      /* DESIGN */
 
-        backgroundColor:
-          typeof body.backgroundColor === "string" &&
-          body.backgroundColor.trim()
-            ? body.backgroundColor
-            : "#17142E",
-      });
+      backgroundColor:
+        typeof body.backgroundColor === "string" && body.backgroundColor.trim()
+          ? body.backgroundColor
+          : "#17142E",
+    });
 
     /* =====================================================
        RESPONSE
@@ -426,19 +327,15 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        message:
-          "Digital card created successfully",
+        message: "Digital card created successfully",
         card,
       },
       {
         status: 201,
-      }
+      },
     );
   } catch (error) {
-    console.error(
-      "CREATE DIGITAL CARD ERROR:",
-      error
-    );
+    console.error("CREATE DIGITAL CARD ERROR:", error);
 
     return NextResponse.json(
       {
@@ -450,7 +347,7 @@ export async function POST(
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
@@ -460,31 +357,26 @@ export async function POST(
    GET DIGITAL CARDS
 ========================================================= */
 
-export async function GET(
-  request: NextRequest
-) {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const { searchParams } =
-      new URL(request.url);
+    const { searchParams } = new URL(request.url);
 
-    const userId =
-      searchParams.get("userId");
+    const userId = searchParams.get("userId");
 
     /* =====================================================
        GET USER CARDS
     ===================================================== */
 
     if (userId) {
-      const cards =
-        await DigitalCard.find({
-          userId,
+      const cards = await DigitalCard.find({
+        userId,
+      })
+        .sort({
+          createdAt: -1,
         })
-          .sort({
-            createdAt: -1,
-          })
-          .lean();
+        .lean();
 
       return NextResponse.json({
         success: true,
@@ -496,23 +388,19 @@ export async function GET(
        GET ALL CARDS
     ===================================================== */
 
-    const cards =
-      await DigitalCard.find()
-        .sort({
-          createdAt: -1,
-        })
-        .limit(50)
-        .lean();
+    const cards = await DigitalCard.find()
+      .sort({
+        createdAt: -1,
+      })
+      .limit(50)
+      .lean();
 
     return NextResponse.json({
       success: true,
       cards,
     });
   } catch (error) {
-    console.error(
-      "GET DIGITAL CARDS ERROR:",
-      error
-    );
+    console.error("GET DIGITAL CARDS ERROR:", error);
 
     return NextResponse.json(
       {
@@ -524,7 +412,7 @@ export async function GET(
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

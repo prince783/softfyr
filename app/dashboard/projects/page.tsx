@@ -17,6 +17,7 @@ import {
   Search,
   UserRound,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 type ProjectType = "Digital Visiting Card" | "RESUME" | "Biography";
 type Status = "Active" | "Draft" | "Expired";
@@ -66,7 +67,6 @@ const projects: Project[] = [
     expires: "10 May 2026",
     expiresTime: "(359 days left)",
   },
-   
 ];
 
 const typeStyles: Record<ProjectType, string> = {
@@ -75,7 +75,7 @@ const typeStyles: Record<ProjectType, string> = {
   Biography: "bg-[#eaf9ed] text-[#43a85b]",
 };
 
-const typeIcons: Record<ProjectType, typeof FileText> = {
+const typeIcons: Record<ProjectType, LucideIcon> = {
   "Digital Visiting Card": ImageIcon,
   RESUME: FileText,
   Biography: UserRound,
@@ -113,6 +113,7 @@ export default function MyProjectsPage() {
             <h1 className="text-[21px] font-bold tracking-[-0.4px] text-[#20253a]">
               My Projects
             </h1>
+
             <p className="mt-1 text-[11px] text-[#747b8c]">
               Create, manage and track all your projects in one place.
             </p>
@@ -120,7 +121,9 @@ export default function MyProjectsPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/dashboard/projects/create-project")}
+            onClick={() =>
+              router.push("/dashboard/projects/create-project")
+            }
             className="flex h-[38px] items-center justify-center gap-2 self-start rounded-md bg-gradient-to-r from-[#6338e5] to-[#7138e9] px-4 text-[12px] font-semibold text-white shadow-[0_3px_8px_rgba(105,65,220,0.18)] transition hover:from-[#5630cf] hover:to-[#6630d7] sm:self-auto"
           >
             <Plus size={16} strokeWidth={2} />
@@ -136,6 +139,7 @@ export default function MyProjectsPage() {
             value="12"
             icon={FolderIcon}
           />
+
           <SummaryCard
             title="Digital Visiting Cards"
             value="07"
@@ -143,6 +147,7 @@ export default function MyProjectsPage() {
             iconBg="bg-[#f1eaff]"
             iconColor="text-[#7254e8]"
           />
+
           <SummaryCard
             title="RESUME"
             value="03"
@@ -150,6 +155,7 @@ export default function MyProjectsPage() {
             iconBg="bg-[#eaf3ff]"
             iconColor="text-[#3985df]"
           />
+
           <SummaryCard
             title="Biography"
             value="02"
@@ -169,6 +175,7 @@ export default function MyProjectsPage() {
                 strokeWidth={1.8}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9298a5]"
               />
+
               <input
                 value={search}
                 onChange={(e) => {
@@ -193,7 +200,12 @@ export default function MyProjectsPage() {
 
             <SelectFilter
               value={status}
-              options={["All Status", "Active", "Draft", "Expired"]}
+              options={[
+                "All Status",
+                "Active",
+                "Draft",
+                "Expired",
+              ]}
               onChange={setStatus}
             />
 
@@ -211,15 +223,41 @@ export default function MyProjectsPage() {
             <table className="w-full min-w-[1050px] border-collapse">
               <thead>
                 <tr className="h-[37px] border-b border-[#eceef2] bg-[#fafbfc] text-left">
-                  <th className="px-4 text-[9px] font-semibold text-[#52596a]">Project</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Type</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Status</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Views</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">QR Scans</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Shares</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Created On</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Expires On</th>
-                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">Actions</th>
+                  <th className="px-4 text-[9px] font-semibold text-[#52596a]">
+                    Project
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Type
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Status
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Views
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    QR Scans
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Shares
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Created On
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Expires On
+                  </th>
+
+                  <th className="px-3 text-[9px] font-semibold text-[#52596a]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -246,10 +284,12 @@ export default function MyProjectsPage() {
                             <p className="text-[10.5px] font-semibold text-[#34394b]">
                               {project.name}
                             </p>
+
                             <div className="mt-1 flex max-w-[190px] items-center gap-1">
                               <span className="truncate text-[9px] text-[#8a909d]">
                                 {project.url}
                               </span>
+
                               <Copy
                                 size={10}
                                 className="shrink-0 text-[#9aa0ac]"
@@ -274,9 +314,11 @@ export default function MyProjectsPage() {
                       <td className="px-3 text-[9.5px] font-medium text-[#3f4657]">
                         {project.views}
                       </td>
+
                       <td className="px-3 text-[9.5px] font-medium text-[#3f4657]">
                         {project.scans}
                       </td>
+
                       <td className="px-3 text-[9.5px] font-medium text-[#3f4657]">
                         {project.shares}
                       </td>
@@ -285,6 +327,7 @@ export default function MyProjectsPage() {
                         <p className="text-[9px] font-medium text-[#4d5362]">
                           {project.created}
                         </p>
+
                         <p className="mt-1 text-[8px] text-[#9298a5]">
                           {project.createdTime}
                         </p>
@@ -294,6 +337,7 @@ export default function MyProjectsPage() {
                         <p className="text-[9px] font-medium text-[#4d5362]">
                           {project.expires}
                         </p>
+
                         {project.expiresTime && (
                           <p
                             className={`mt-1 text-[8px] ${
@@ -330,7 +374,10 @@ export default function MyProjectsPage() {
                 <div key={project.id} className="p-4">
                   <div className="flex gap-3">
                     <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-md bg-[#eef1f7]">
-                      <TypeIcon size={21} className="text-[#778092]" />
+                      <TypeIcon
+                        size={21}
+                        className="text-[#778092]"
+                      />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -339,23 +386,32 @@ export default function MyProjectsPage() {
                           <p className="text-[12px] font-semibold text-[#34394b]">
                             {project.name}
                           </p>
+
                           <p className="mt-1 truncate text-[9px] text-[#8a909d]">
                             {project.url}
                           </p>
                         </div>
-                        <StatusBadge status={project.status} />
+
+                        <StatusBadge
+                          status={project.status}
+                        />
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={`rounded-md px-2 py-1 text-[8px] font-semibold ${typeStyles[project.type]}`}>
+                        <span
+                          className={`rounded-md px-2 py-1 text-[8px] font-semibold ${typeStyles[project.type]}`}
+                        >
                           {project.type}
                         </span>
+
                         <span className="rounded-md bg-[#f6f7f9] px-2 py-1 text-[8px] text-[#626978]">
                           Views: {project.views}
                         </span>
+
                         <span className="rounded-md bg-[#f6f7f9] px-2 py-1 text-[8px] text-[#626978]">
                           Scans: {project.scans}
                         </span>
+
                         <span className="rounded-md bg-[#f6f7f9] px-2 py-1 text-[8px] text-[#626978]">
                           Shares: {project.shares}
                         </span>
@@ -376,10 +432,15 @@ export default function MyProjectsPage() {
           {/* Empty */}
           {filteredProjects.length === 0 && (
             <div className="px-6 py-14 text-center">
-              <FileText className="mx-auto text-[#b4b8c3]" size={28} />
+              <FileText
+                className="mx-auto text-[#b4b8c3]"
+                size={28}
+              />
+
               <p className="mt-3 text-[13px] font-semibold text-[#4d5362]">
                 No projects found
               </p>
+
               <p className="mt-1 text-[11px] text-[#9298a5]">
                 Try changing your search or filters.
               </p>
@@ -389,15 +450,20 @@ export default function MyProjectsPage() {
           {/* Footer */}
           <div className="flex flex-col gap-3 border-t border-[#eef0f3] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[9px] text-[#777e8d]">
-              Showing 1 to {Math.min(filteredProjects.length, 5)} of 12 projects
+              Showing 1 to{" "}
+              {Math.min(filteredProjects.length, 5)} of 12
+              projects
             </p>
 
             <div className="flex items-center gap-1">
               <PageButton
                 icon={<ChevronLeft size={13} />}
                 disabled={page === 1}
-                onClick={() => setPage(Math.max(1, page - 1))}
+                onClick={() =>
+                  setPage(Math.max(1, page - 1))
+                }
               />
+
               {[1, 2, 3].map((number) => (
                 <PageButton
                   key={number}
@@ -406,9 +472,12 @@ export default function MyProjectsPage() {
                   onClick={() => setPage(number)}
                 />
               ))}
+
               <PageButton
                 icon={<ChevronRight size={13} />}
-                onClick={() => setPage(Math.min(3, page + 1))}
+                onClick={() =>
+                  setPage(Math.min(3, page + 1))
+                }
               />
             </div>
           </div>
@@ -417,6 +486,10 @@ export default function MyProjectsPage() {
     </main>
   );
 }
+
+/* =========================================================
+   SUMMARY CARD
+========================================================= */
 
 function SummaryCard({
   title,
@@ -428,7 +501,11 @@ function SummaryCard({
 }: {
   title: string;
   value: string;
-  icon: typeof FileText;
+  icon: LucideIcon | React.ComponentType<{
+    size?: number;
+    strokeWidth?: number;
+    className?: string;
+  }>;
   active?: boolean;
   iconBg?: string;
   iconColor?: string;
@@ -441,12 +518,21 @@ function SummaryCard({
           : "border-[#e9ebef]"
       }`}
     >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
-        <Icon size={20} strokeWidth={1.6} className={iconColor} />
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}
+      >
+        <Icon
+          size={20}
+          strokeWidth={1.6}
+          className={iconColor}
+        />
       </div>
 
       <div>
-        <p className="text-[9px] font-medium text-[#596071]">{title}</p>
+        <p className="text-[9px] font-medium text-[#596071]">
+          {title}
+        </p>
+
         <p className="mt-0.5 text-[19px] font-bold leading-none text-[#20253a]">
           {value}
         </p>
@@ -455,7 +541,15 @@ function SummaryCard({
   );
 }
 
-function StatusBadge({ status }: { status: Status }) {
+/* =========================================================
+   STATUS BADGE
+========================================================= */
+
+function StatusBadge({
+  status,
+}: {
+  status: Status;
+}) {
   const styles = {
     Active: "bg-[#e8f8ed] text-[#2da653]",
     Draft: "bg-[#eef0f3] text-[#626978]",
@@ -463,12 +557,18 @@ function StatusBadge({ status }: { status: Status }) {
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[8px] font-semibold ${styles[status]}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[8px] font-semibold ${styles[status]}`}
+    >
       <span className="h-[5px] w-[5px] rounded-full bg-current" />
       {status}
     </span>
   );
 }
+
+/* =========================================================
+   SELECT FILTER
+========================================================= */
 
 function SelectFilter({
   value,
@@ -490,6 +590,7 @@ function SelectFilter({
           <option key={option}>{option}</option>
         ))}
       </select>
+
       <ChevronDown
         size={12}
         className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#858b98]"
@@ -498,20 +599,31 @@ function SelectFilter({
   );
 }
 
+/* =========================================================
+   ACTION BUTTON
+========================================================= */
+
 function ActionButton({
   icon: Icon,
 }: {
-  icon: typeof Edit3;
+  icon: LucideIcon;
 }) {
   return (
     <button
       type="button"
       className="flex h-[29px] w-[29px] items-center justify-center rounded-md border border-[#e5e7ed] bg-white text-[#72798a] transition hover:border-[#c9bdf4] hover:bg-[#f8f5ff] hover:text-[#6946dc]"
     >
-      <Icon size={13} strokeWidth={1.7} />
+      <Icon
+        size={13}
+        strokeWidth={1.7}
+      />
     </button>
   );
 }
+
+/* =========================================================
+   PAGE BUTTON
+========================================================= */
 
 function PageButton({
   label,
@@ -535,14 +647,30 @@ function PageButton({
         active
           ? "border-[#6941dc] bg-[#6941dc] text-white"
           : "border-[#e3e5eb] bg-white text-[#697081] hover:bg-[#f7f5ff]"
-      } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
+      } ${
+        disabled
+          ? "cursor-not-allowed opacity-40"
+          : ""
+      }`}
     >
       {label || icon}
     </button>
   );
 }
 
-function FolderIcon({ size = 20, strokeWidth = 1.6, className = "" }: { size?: number; strokeWidth?: number; className?: string }) {
+/* =========================================================
+   FOLDER ICON
+========================================================= */
+
+function FolderIcon({
+  size = 20,
+  strokeWidth = 1.6,
+  className = "",
+}: {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}) {
   return (
     <svg
       width={size}

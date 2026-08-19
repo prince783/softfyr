@@ -290,220 +290,198 @@ export default function LoginPage() {
      SEND OTP
   ======================================================= */
 
-  const handleSendOtp = async () => {
-    const normalizedMobile =
-      normalizeMobile(mobile);
+ const handleSendOtp = async () => {
+  const normalizedMobile =
+    normalizeMobile(mobile);
 
-    if (normalizedMobile.length !== 10) {
-      setError(
-        "Please enter a valid 10-digit mobile number.",
-      );
-      return;
-    }
+  if (normalizedMobile.length !== 10) {
+    setError(
+      "Please enter a valid 10-digit mobile number.",
+    );
+    return;
+  }
 
-    if (!msg91Ready) {
-      setError(
-        "MSG91 OTP service is not ready. Please wait.",
-      );
-      return;
-    }
+  if (!msg91Ready) {
+    setError(
+      "MSG91 OTP service is not ready. Please wait.",
+    );
+    return;
+  }
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch(
+      "/api/auth/login",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          mobile: normalizedMobile,
+        }),
+      },
+    );
+
+    let result: {
+      success?: boolean;
+      message?: string;
+      code?: string;
+    } = {};
 
     try {
-      /*
-       * ==========================================
-       * CHECK USER IN DATABASE
-       * ==========================================
-       */
+      result = await response.json();
+    } catch {
+      result = {};
+    }
 
-      const response = await fetch(
-        "/api/auth/login",
-        {
-          method: "POST",
+    console.log(
+      "LOGIN USER CHECK:",
+      result,
+    );
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            mobile: normalizedMobile,
-          }),
-        },
-      );
-
-      let result: {
-        success?: boolean;
-        message?: string;
-        code?: string;
-      } = {};
-
-      try {
-        result = await response.json();
-      } catch {
-        result = {};
-      }
-
-      console.log(
-        "LOGIN USER CHECK:",
-        result,
-      );
-
-      /*
-       * ==========================================
-       * USER DOES NOT EXIST
-       * ==========================================
-       */
-
-      if (
-        response.status === 404 ||
-        result.code === "USER_NOT_FOUND"
-      ) {
-        setLoading(false);
-
-        setError(
-          "No account found with this mobile number. Please register first.",
-        );
-
-        return;
-      }
-
-      if (
-        !response.ok ||
-        result.success !== true
-      ) {
-        setLoading(false);
-
-        setError(
-          result.message ||
-            "Unable to check your account.",
-        );
-
-        return;
-      }
-
-      /*
-       * ==========================================
-       * SAVE NORMALIZED MOBILE
-       * ==========================================
-       */
-
-      sessionStorage.setItem(
-        "login_mobile",
-        normalizedMobile,
-      );
-
-      sessionStorage.setItem(
-        "msg91_mobile",
-        normalizedMobile,
-      );
-
-      /*
-       * ==========================================
-       * CHECK MSG91
-       * ==========================================
-       */
-
-      if (
-        typeof window.sendOtp !==
-        "function"
-      ) {
-        setLoading(false);
-
-        setError(
-          "MSG91 OTP service is not ready. Please wait.",
-        );
-
-        return;
-      }
-
-      /*
-       * ==========================================
-       * SEND OTP TO MSG91
-       * ==========================================
-       */
-
-      const identifier =
-        `91${normalizedMobile}`;
-
-      window.sendOtp(
-        identifier,
-
-        /* SUCCESS */
-        (data) => {
-          console.log(
-            "LOGIN OTP SENT:",
-            data,
-          );
-
-          const reqId =
-            getReqId(data);
-
-          if (reqId) {
-            sessionStorage.setItem(
-              "msg91_req_id",
-              reqId,
-            );
-          } else {
-            sessionStorage.removeItem(
-              "msg91_req_id",
-            );
-          }
-
-          setMobile(normalizedMobile);
-          setOtp("");
-          setError("");
-          setLoading(false);
-          setStep("otp");
-        },
-
-        /* FAILURE */
-        (error) => {
-          console.error(
-            "LOGIN OTP ERROR:",
-            error,
-          );
-
-          setLoading(false);
-
-          setError(
-            getMsg91ErrorMessage(
-              error,
-              "Unable to send OTP. Please try again.",
-            ),
-          );
-        },
-      );
-    } catch (error) {
-      console.error(
-        "LOGIN CHECK ERROR:",
-        error,
-      );
-
+    if (
+      response.status === 404 ||
+      result.code === "USER_NOT_FOUND"
+    ) {
       setLoading(false);
 
       setError(
-        getMsg91ErrorMessage(
-          error,
-          "Unable to check account.",
-        ),
+        "No account found with this mobile number. Please register first.",
       );
+
+      return;
     }
-  };
+
+    if (
+      !response.ok ||
+      result.success !== true
+    ) {
+      setLoading(false);
+
+      setError(
+        result.message ||
+          "Unable to check your account.",
+      );
+
+      return;
+    }
+
+    sessionStorage.setItem(
+      "login_mobile",
+      normalizedMobile,
+    );
+
+    sessionStorage.setItem(
+      "msg91_mobile",
+      normalizedMobile,
+    );
+
+    /*
+     * IMPORTANT:
+     * Store the function in a local constant after
+     * checking that it actually exists.
+     */
+    const sendOtp = window.sendOtp;
+
+    if (typeof sendOtp !== "function") {
+      setLoading(false);
+
+      setError(
+        "MSG91 OTP service is not ready. Please wait.",
+      );
+
+      return;
+    }
+
+    const identifier =
+      `91${normalizedMobile}`;
+
+    sendOtp(
+      identifier,
+
+      /* SUCCESS */
+      (data) => {
+        console.log(
+          "LOGIN OTP SENT:",
+          data,
+        );
+
+        const reqId =
+          getReqId(data);
+
+        if (reqId) {
+          sessionStorage.setItem(
+            "msg91_req_id",
+            reqId,
+          );
+        } else {
+          sessionStorage.removeItem(
+            "msg91_req_id",
+          );
+        }
+
+        setMobile(normalizedMobile);
+        setOtp("");
+        setError("");
+        setLoading(false);
+        setStep("otp");
+      },
+
+      /* FAILURE */
+      (error) => {
+        console.error(
+          "LOGIN OTP ERROR:",
+          error,
+        );
+
+        setLoading(false);
+
+        setError(
+          getMsg91ErrorMessage(
+            error,
+            "Unable to send OTP. Please try again.",
+          ),
+        );
+      },
+    );
+  } catch (error) {
+    console.error(
+      "LOGIN CHECK ERROR:",
+      error,
+    );
+
+    setLoading(false);
+
+    setError(
+      getMsg91ErrorMessage(
+        error,
+        "Unable to check account.",
+      ),
+    );
+  }
+};
 
   /* =======================================================
      VERIFY OTP
   ======================================================= */
 
- const handleVerifyOtp = () => {
+const handleVerifyOtp = () => {
   if (otp.length !== 6) {
     setError("Please enter the 6-digit OTP.");
     return;
   }
 
-  if (typeof window.verifyOtp !== "function") {
-    setError("MSG91 OTP service is not ready. Please wait.");
+  const verifyOtp = window.verifyOtp;
+
+  if (typeof verifyOtp !== "function") {
+    setError(
+      "MSG91 OTP service is not ready. Please wait.",
+    );
     return;
   }
 
@@ -533,7 +511,7 @@ export default function LoginPage() {
   setError("");
 
   try {
-    window.verifyOtp(
+    verifyOtp(
       otp,
 
       /* ==========================================
@@ -545,15 +523,6 @@ export default function LoginPage() {
           "MSG91 OTP VERIFIED SUCCESS:",
           data,
         );
-
-        /*
-         * IMPORTANT:
-         *
-         * Do NOT require accessToken here.
-         *
-         * Your MSG91 Widget has already verified
-         * the OTP successfully.
-         */
 
         try {
           const response = await fetch(
@@ -595,10 +564,6 @@ export default function LoginPage() {
             );
           }
 
-          /*
-           * Clear temporary login data
-           */
-
           sessionStorage.removeItem(
             "msg91_req_id",
           );
@@ -613,10 +578,6 @@ export default function LoginPage() {
 
           setLoading(false);
           setError("");
-
-          /*
-           * LOGIN SUCCESS
-           */
 
           router.replace("/dashboard");
         } catch (error) {
@@ -679,15 +640,53 @@ export default function LoginPage() {
      RESEND OTP
   ======================================================= */
 
-  const handleResendOtp = () => {
-    if (loading || resending) {
-      return;
-    }
+const handleResendOtp = () => {
+  if (loading || resending) {
+    return;
+  }
 
-    if (
-      typeof window.retryOtp !==
-      "function"
-    ) {
+  const sendOtp = window.sendOtp;
+  const retryOtp = window.retryOtp;
+
+  const storedMobile =
+    sessionStorage.getItem(
+      "login_mobile",
+    );
+
+  const normalizedMobile =
+    normalizeMobile(
+      storedMobile || mobile,
+    );
+
+  if (
+    normalizedMobile.length !== 10
+  ) {
+    setError(
+      "Mobile number is invalid.",
+    );
+
+    return;
+  }
+
+  const reqId =
+    sessionStorage.getItem(
+      "msg91_req_id",
+    );
+
+  setResending(true);
+  setError("");
+
+  /*
+   * ==========================================
+   * IF REQUEST ID DOES NOT EXIST
+   * SEND NEW OTP
+   * ==========================================
+   */
+
+  if (!reqId) {
+    if (typeof sendOtp !== "function") {
+      setResending(false);
+
       setError(
         "MSG91 OTP service is not ready.",
       );
@@ -695,111 +694,12 @@ export default function LoginPage() {
       return;
     }
 
-    const storedMobile =
-      sessionStorage.getItem(
-        "login_mobile",
-      );
-
-    const normalizedMobile =
-      normalizeMobile(
-        storedMobile || mobile,
-      );
-
-    if (
-      normalizedMobile.length !== 10
-    ) {
-      setError(
-        "Mobile number is invalid.",
-      );
-
-      return;
-    }
-
-    const reqId =
-      sessionStorage.getItem(
-        "msg91_req_id",
-      );
-
-    setResending(true);
-    setError("");
-
-    /*
-     * ==========================================
-     * IF REQUEST ID DOES NOT EXIST
-     * SEND NEW OTP
-     * ==========================================
-     */
-
-    if (!reqId) {
-      const identifier =
-        `91${normalizedMobile}`;
-
-      try {
-        window.sendOtp(
-          identifier,
-
-          /* SUCCESS */
-          (data) => {
-            const newReqId =
-              getReqId(data);
-
-            if (newReqId) {
-              sessionStorage.setItem(
-                "msg91_req_id",
-                newReqId,
-              );
-            }
-
-            sessionStorage.setItem(
-              "msg91_mobile",
-              normalizedMobile,
-            );
-
-            sessionStorage.setItem(
-              "login_mobile",
-              normalizedMobile,
-            );
-
-            setOtp("");
-            setResending(false);
-            setError("");
-          },
-
-          /* FAILURE */
-          (error) => {
-            setResending(false);
-
-            setError(
-              getMsg91ErrorMessage(
-                error,
-                "Unable to resend OTP.",
-              ),
-            );
-          },
-        );
-      } catch (error) {
-        setResending(false);
-
-        setError(
-          getMsg91ErrorMessage(
-            error,
-            "Unable to resend OTP.",
-          ),
-        );
-      }
-
-      return;
-    }
-
-    /*
-     * ==========================================
-     * RETRY EXISTING OTP
-     * ==========================================
-     */
+    const identifier =
+      `91${normalizedMobile}`;
 
     try {
-      window.retryOtp(
-        null,
+      sendOtp(
+        identifier,
 
         /* SUCCESS */
         (data) => {
@@ -813,6 +713,16 @@ export default function LoginPage() {
             );
           }
 
+          sessionStorage.setItem(
+            "msg91_mobile",
+            normalizedMobile,
+          );
+
+          sessionStorage.setItem(
+            "login_mobile",
+            normalizedMobile,
+          );
+
           setOtp("");
           setResending(false);
           setError("");
@@ -825,12 +735,10 @@ export default function LoginPage() {
           setError(
             getMsg91ErrorMessage(
               error,
-              "Unable to resend OTP. Please try again.",
+              "Unable to resend OTP.",
             ),
           );
         },
-
-        reqId,
       );
     } catch (error) {
       setResending(false);
@@ -842,8 +750,72 @@ export default function LoginPage() {
         ),
       );
     }
-  };
 
+    return;
+  }
+
+  /*
+   * ==========================================
+   * RETRY EXISTING OTP
+   * ==========================================
+   */
+
+  if (typeof retryOtp !== "function") {
+    setResending(false);
+
+    setError(
+      "MSG91 OTP service is not ready.",
+    );
+
+    return;
+  }
+
+  try {
+    retryOtp(
+      null,
+
+      /* SUCCESS */
+      (data) => {
+        const newReqId =
+          getReqId(data);
+
+        if (newReqId) {
+          sessionStorage.setItem(
+            "msg91_req_id",
+            newReqId,
+          );
+        }
+
+        setOtp("");
+        setResending(false);
+        setError("");
+      },
+
+      /* FAILURE */
+      (error) => {
+        setResending(false);
+
+        setError(
+          getMsg91ErrorMessage(
+            error,
+            "Unable to resend OTP. Please try again.",
+          ),
+        );
+      },
+
+      reqId,
+    );
+  } catch (error) {
+    setResending(false);
+
+    setError(
+      getMsg91ErrorMessage(
+        error,
+        "Unable to resend OTP.",
+      ),
+    );
+  }
+};
   /* =======================================================
      CHANGE NUMBER
   ======================================================= */

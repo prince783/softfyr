@@ -1,8 +1,4 @@
-import mongoose, {
-  Document,
-  Model,
-  Schema,
-} from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
@@ -13,6 +9,8 @@ export interface IUser extends Document {
   isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+  profilePhoto: string;
+  profession?: string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -50,6 +48,15 @@ const UserSchema = new Schema<IUser>(
       index: true,
       trim: true,
     },
+    profilePhoto: {
+      type: String,
+      default: "",
+    },
+
+    profession: {
+      type: String,
+      default: "",
+    },
 
     isVerified: {
       type: Boolean,
@@ -58,11 +65,10 @@ const UserSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const User: Model<IUser> =
-  mongoose.models.User ||
-  mongoose.model<IUser>("User", UserSchema);
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User;

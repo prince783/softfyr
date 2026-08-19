@@ -1,9 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useState,
-} from "react";
+import React, { useCallback, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -56,24 +53,14 @@ interface Msg91Response {
    ERROR MESSAGE
 ========================================================= */
 
-function getMsg91ErrorMessage(
-  error: unknown,
-  fallback: string,
-): string {
-  if (
-    typeof error === "object" &&
-    error !== null
-  ) {
+function getMsg91ErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
     const obj = error as {
       message?: string;
       error?: string;
     };
 
-    return (
-      obj.message ||
-      obj.error ||
-      fallback
-    );
+    return obj.message || obj.error || fallback;
   }
 
   if (typeof error === "string") {
@@ -88,15 +75,11 @@ function getMsg91ErrorMessage(
 ========================================================= */
 
 function getReqId(data: unknown): string {
-  if (
-    typeof data !== "object" ||
-    data === null
-  ) {
+  if (typeof data !== "object" || data === null) {
     return "";
   }
 
-  const response =
-    data as Msg91Response;
+  const response = data as Msg91Response;
 
   const values: unknown[] = [
     response.reqId,
@@ -105,10 +88,7 @@ function getReqId(data: unknown): string {
     response.request_id,
   ];
 
-  if (
-    response.data &&
-    typeof response.data === "object"
-  ) {
+  if (response.data && typeof response.data === "object") {
     values.push(
       response.data.reqId,
       response.data.req_id,
@@ -118,10 +98,7 @@ function getReqId(data: unknown): string {
   }
 
   for (const value of values) {
-    if (
-      typeof value === "string" &&
-      value.trim()
-    ) {
+    if (typeof value === "string" && value.trim()) {
       return value.trim();
     }
   }
@@ -133,22 +110,16 @@ function getReqId(data: unknown): string {
    GET ACCESS TOKEN
 ========================================================= */
 
-function getAccessToken(
-  data: unknown,
-): string {
+function getAccessToken(data: unknown): string {
   if (typeof data === "string") {
     return data.trim();
   }
 
-  if (
-    typeof data !== "object" ||
-    data === null
-  ) {
+  if (typeof data !== "object" || data === null) {
     return "";
   }
 
-  const response =
-    data as Msg91Response;
+  const response = data as Msg91Response;
 
   const tokens: unknown[] = [
     response.access_token,
@@ -158,15 +129,8 @@ function getAccessToken(
     response.message,
   ];
 
-  if (
-    response.data &&
-    typeof response.data === "object"
-  ) {
-    const nested =
-      response.data as Record<
-        string,
-        unknown
-      >;
+  if (response.data && typeof response.data === "object") {
+    const nested = response.data as Record<string, unknown>;
 
     tokens.push(
       nested.access_token,
@@ -178,10 +142,7 @@ function getAccessToken(
   }
 
   for (const token of tokens) {
-    if (
-      typeof token === "string" &&
-      token.trim()
-    ) {
+    if (typeof token === "string" && token.trim()) {
       const value = token.trim();
 
       /*
@@ -190,9 +151,7 @@ function getAccessToken(
        * JWT format:
        * header.payload.signature
        */
-      if (
-        value.split(".").length === 3
-      ) {
+      if (value.split(".").length === 3) {
         return value;
       }
     }
@@ -212,128 +171,92 @@ export default function RegisterPage() {
      FORM STATES
   ======================================================= */
 
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
 
-  const [designation, setDesignation] =
-    useState("");
+  const [designation, setDesignation] = useState("");
 
-  const [companyName, setCompanyName] =
-    useState("");
+  const [companyName, setCompanyName] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [email, setEmail] = useState("");
 
-  const [mobile, setMobile] =
-    useState("");
+  const [mobile, setMobile] = useState("");
 
-  const [profession, setProfession] =
-    useState("");
+  const [profession, setProfession] = useState("");
 
-  const [otp, setOtp] =
-    useState("");
+  const [otp, setOtp] = useState("");
 
-  const [step, setStep] = useState<
-    "details" | "otp"
-  >("details");
+  const [step, setStep] = useState<"details" | "otp">("details");
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [resending, setResending] =
-    useState(false);
+  const [resending, setResending] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
 
-  const [msg91Ready, setMsg91Ready] =
-    useState(false);
+  const [msg91Ready, setMsg91Ready] = useState(false);
 
   /* =======================================================
      MSG91 READY
   ======================================================= */
 
-  const handleMsg91Ready =
-    useCallback(() => {
-      setMsg91Ready(true);
-      setError("");
-    }, []);
+  const handleMsg91Ready = useCallback(() => {
+    setMsg91Ready(true);
+    setError("");
+  }, []);
 
   /* =======================================================
      MSG91 ERROR
   ======================================================= */
 
-  const handleMsg91Error =
-    useCallback(
-      (error: unknown) => {
-        setMsg91Ready(false);
+  const handleMsg91Error = useCallback((error: unknown) => {
+    setMsg91Ready(false);
 
-        setError(
-          getMsg91ErrorMessage(
-            error,
-            "MSG91 OTP service could not be initialized.",
-          ),
-        );
-      },
-      [],
+    setError(
+      getMsg91ErrorMessage(
+        error,
+        "MSG91 OTP service could not be initialized.",
+      ),
     );
+  }, []);
 
   /* =======================================================
      INPUT HANDLERS
   ======================================================= */
 
-  const handleNameChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
     setError("");
   };
 
-  const handleDesignationChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleDesignationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDesignation(e.target.value);
     setError("");
   };
 
-  const handleCompanyNameChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCompanyName(e.target.value);
     setError("");
   };
 
-  const handleEmailChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
     setError("");
   };
 
-  const handleMobileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value
-      .replace(/\D/g, "")
-      .slice(0, 10);
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
 
     setMobile(value);
     setError("");
   };
 
-  const handleProfessionChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleProfessionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfession(e.target.value);
     setError("");
   };
 
-  const handleOtpChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value
-      .replace(/\D/g, "")
-      .slice(0, 6);
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
 
     setOtp(value);
     setError("");
@@ -345,54 +268,39 @@ export default function RegisterPage() {
 
   const validateForm = () => {
     if (!name.trim()) {
-      setError(
-        "Please enter your full name.",
-      );
+      setError("Please enter your full name.");
       return false;
     }
 
     if (!designation.trim()) {
-      setError(
-        "Please enter your designation.",
-      );
+      setError("Please enter your designation.");
       return false;
     }
 
     if (!companyName.trim()) {
-      setError(
-        "Please enter your company name.",
-      );
+      setError("Please enter your company name.");
       return false;
     }
 
     if (!email.trim()) {
-      setError(
-        "Please enter your email address.",
-      );
+      setError("Please enter your email address.");
       return false;
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
-      setError(
-        "Please enter a valid email address.",
-      );
+      setError("Please enter a valid email address.");
       return false;
     }
 
     if (mobile.length !== 10) {
-      setError(
-        "Please enter a valid 10-digit mobile number.",
-      );
+      setError("Please enter a valid 10-digit mobile number.");
       return false;
     }
 
     if (!profession.trim()) {
-      setError(
-        "Please enter your profession or industry.",
-      );
+      setError("Please enter your profession or industry.");
       return false;
     }
 
@@ -408,13 +316,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (
-      typeof window.sendOtp !==
-      "function"
-    ) {
-      setError(
-        "MSG91 OTP service is not ready. Please wait.",
-      );
+    if (typeof window.sendOtp !== "function") {
+      setError("MSG91 OTP service is not ready. Please wait.");
       return;
     }
 
@@ -429,8 +332,7 @@ export default function RegisterPage() {
 
         /* SUCCESS */
         (data) => {
-          const reqId =
-            getReqId(data);
+          const reqId = getReqId(data);
 
           /*
            * Store temporary registration
@@ -440,45 +342,22 @@ export default function RegisterPage() {
            * after successful registration.
            */
 
-          sessionStorage.setItem(
-            "msg91_mobile",
-            mobile,
-          );
+          sessionStorage.setItem("msg91_mobile", mobile);
 
-          sessionStorage.setItem(
-            "register_name",
-            name.trim(),
-          );
+          sessionStorage.setItem("register_name", name.trim());
 
-          sessionStorage.setItem(
-            "register_designation",
-            designation.trim(),
-          );
+          sessionStorage.setItem("register_designation", designation.trim());
 
-          sessionStorage.setItem(
-            "register_companyName",
-            companyName.trim(),
-          );
+          sessionStorage.setItem("register_companyName", companyName.trim());
 
-          sessionStorage.setItem(
-            "register_email",
-            email.trim(),
-          );
+          sessionStorage.setItem("register_email", email.trim());
 
-          sessionStorage.setItem(
-            "register_profession",
-            profession.trim(),
-          );
+          sessionStorage.setItem("register_profession", profession.trim());
 
           if (reqId) {
-            sessionStorage.setItem(
-              "msg91_req_id",
-              reqId,
-            );
+            sessionStorage.setItem("msg91_req_id", reqId);
           } else {
-            sessionStorage.removeItem(
-              "msg91_req_id",
-            );
+            sessionStorage.removeItem("msg91_req_id");
           }
 
           setOtp("");
@@ -503,10 +382,7 @@ export default function RegisterPage() {
       setLoading(false);
 
       setError(
-        getMsg91ErrorMessage(
-          error,
-          "Unable to send OTP. Please try again.",
-        ),
+        getMsg91ErrorMessage(error, "Unable to send OTP. Please try again."),
       );
     }
   };
@@ -517,88 +393,45 @@ export default function RegisterPage() {
 
   const handleVerifyOtp = () => {
     if (otp.length !== 6) {
-      setError(
-        "Please enter the 6-digit OTP.",
-      );
+      setError("Please enter the 6-digit OTP.");
       return;
     }
 
-    if (
-      typeof window.verifyOtp !==
-      "function"
-    ) {
-      setError(
-        "MSG91 OTP service is not ready. Please wait.",
-      );
+    if (typeof window.verifyOtp !== "function") {
+      setError("MSG91 OTP service is not ready. Please wait.");
       return;
     }
 
-    const storedMobile =
-      sessionStorage.getItem(
-        "msg91_mobile",
-      );
+    const storedMobile = sessionStorage.getItem("msg91_mobile");
 
-    const storedReqId =
-      sessionStorage.getItem(
-        "msg91_req_id",
-      );
+    const storedReqId = sessionStorage.getItem("msg91_req_id");
 
-    const storedName =
-      sessionStorage.getItem(
-        "register_name",
-      );
+    const storedName = sessionStorage.getItem("register_name");
 
-    const storedDesignation =
-      sessionStorage.getItem(
-        "register_designation",
-      );
+    const storedDesignation = sessionStorage.getItem("register_designation");
 
-    const storedCompanyName =
-      sessionStorage.getItem(
-        "register_companyName",
-      );
+    const storedCompanyName = sessionStorage.getItem("register_companyName");
 
-    const storedEmail =
-      sessionStorage.getItem(
-        "register_email",
-      );
+    const storedEmail = sessionStorage.getItem("register_email");
 
-    const storedProfession =
-      sessionStorage.getItem(
-        "register_profession",
-      );
+    const storedProfession = sessionStorage.getItem("register_profession");
 
-    const verificationMobile =
-      storedMobile || mobile;
+    const verificationMobile = storedMobile || mobile;
 
-    const registrationName =
-      storedName || name;
+    const registrationName = storedName || name;
 
-    const registrationDesignation =
-      storedDesignation ||
-      designation;
+    const registrationDesignation = storedDesignation || designation;
 
-    const registrationCompanyName =
-      storedCompanyName ||
-      companyName;
+    const registrationCompanyName = storedCompanyName || companyName;
 
-    const registrationEmail =
-      storedEmail || email;
+    const registrationEmail = storedEmail || email;
 
-    const registrationProfession =
-      storedProfession ||
-      profession;
+    const registrationProfession = storedProfession || profession;
 
-    const reqId =
-      storedReqId || undefined;
+    const reqId = storedReqId || undefined;
 
-    if (
-      verificationMobile.length !==
-      10
-    ) {
-      setError(
-        "Mobile number is invalid. Please request OTP again.",
-      );
+    if (verificationMobile.length !== 10) {
+      setError("Mobile number is invalid. Please request OTP again.");
 
       setStep("details");
 
@@ -617,8 +450,7 @@ export default function RegisterPage() {
         ================================================= */
 
         async (data) => {
-          const accessToken =
-            getAccessToken(data);
+          const accessToken = getAccessToken(data);
 
           if (!accessToken) {
             setLoading(false);
@@ -645,57 +477,42 @@ export default function RegisterPage() {
              * /api/auth/register
              */
 
-            const response =
-              await fetch(
-                "/api/auth/register",
-                {
-                  method: "POST",
+            const response = await fetch("/api/auth/register", {
+              method: "POST",
 
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                  },
+              headers: {
+                "Content-Type": "application/json",
+              },
 
-                  /*
-                   * Important:
-                   *
-                   * Backend creates an
-                   * HttpOnly session cookie.
-                   */
-                  credentials:
-                    "include",
+              /*
+               * Important:
+               *
+               * Backend creates an
+               * HttpOnly session cookie.
+               */
+              credentials: "include",
 
-                  body: JSON.stringify({
-                    name:
-                      registrationName.trim(),
+              body: JSON.stringify({
+                name: registrationName.trim(),
 
-                    designation:
-                      registrationDesignation.trim(),
+                designation: registrationDesignation.trim(),
 
-                    companyName:
-                      registrationCompanyName.trim(),
+                companyName: registrationCompanyName.trim(),
 
-                    email:
-                      registrationEmail
-                        .trim()
-                        .toLowerCase(),
+                email: registrationEmail.trim().toLowerCase(),
 
-                    mobile:
-                      verificationMobile,
+                mobile: verificationMobile,
 
-                    profession:
-                      registrationProfession.trim(),
+                profession: registrationProfession.trim(),
 
-                    /*
-                     * MSG91 Widget JWT
-                     */
-                    accessToken,
-                  }),
-                },
-              );
+                /*
+                 * MSG91 Widget JWT
+                 */
+                accessToken,
+              }),
+            });
 
-            const result =
-              await response.json();
+            const result = await response.json();
 
             /*
              * ==============================================
@@ -704,19 +521,11 @@ export default function RegisterPage() {
              */
 
             if (!response.ok) {
-              throw new Error(
-                result?.message ||
-                  "Registration failed.",
-              );
+              throw new Error(result?.message || "Registration failed.");
             }
 
-            if (
-              result?.success !== true
-            ) {
-              throw new Error(
-                result?.message ||
-                  "Registration failed.",
-              );
+            if (result?.success !== true) {
+              throw new Error(result?.message || "Registration failed.");
             }
 
             /*
@@ -732,33 +541,19 @@ export default function RegisterPage() {
              *
              */
 
-            sessionStorage.removeItem(
-              "msg91_req_id",
-            );
+            sessionStorage.removeItem("msg91_req_id");
 
-            sessionStorage.removeItem(
-              "msg91_mobile",
-            );
+            sessionStorage.removeItem("msg91_mobile");
 
-            sessionStorage.removeItem(
-              "register_name",
-            );
+            sessionStorage.removeItem("register_name");
 
-            sessionStorage.removeItem(
-              "register_designation",
-            );
+            sessionStorage.removeItem("register_designation");
 
-            sessionStorage.removeItem(
-              "register_companyName",
-            );
+            sessionStorage.removeItem("register_companyName");
 
-            sessionStorage.removeItem(
-              "register_email",
-            );
+            sessionStorage.removeItem("register_email");
 
-            sessionStorage.removeItem(
-              "register_profession",
-            );
+            sessionStorage.removeItem("register_profession");
 
             setLoading(false);
             setError("");
@@ -770,17 +565,12 @@ export default function RegisterPage() {
              * will be used there.
              */
 
-            router.replace(
-              "/dashboard",
-            );
+            router.replace("/dashboard");
           } catch (error) {
             setLoading(false);
 
             setError(
-              getMsg91ErrorMessage(
-                error,
-                "Unable to complete registration.",
-              ),
+              getMsg91ErrorMessage(error, "Unable to complete registration."),
             );
           }
         },
@@ -793,10 +583,7 @@ export default function RegisterPage() {
           setLoading(false);
 
           setError(
-            getMsg91ErrorMessage(
-              error,
-              "Invalid OTP. Please try again.",
-            ),
+            getMsg91ErrorMessage(error, "Invalid OTP. Please try again."),
           );
         },
 
@@ -806,10 +593,7 @@ export default function RegisterPage() {
       setLoading(false);
 
       setError(
-        getMsg91ErrorMessage(
-          error,
-          "Unable to verify OTP. Please try again.",
-        ),
+        getMsg91ErrorMessage(error, "Unable to verify OTP. Please try again."),
       );
     }
   };
@@ -818,29 +602,39 @@ export default function RegisterPage() {
      RESEND OTP
 ========================================================= */
 
+  /* =======================================================
+   RESEND OTP
+========================================================= */
+
   const handleResendOtp = () => {
     if (loading || resending) {
       return;
     }
 
-    if (
-      typeof window.retryOtp !==
-      "function"
-    ) {
-      setError(
-        "MSG91 OTP service is not ready.",
-      );
+    /*
+     * Capture MSG91 functions locally.
+     *
+     * TypeScript considers window.sendOtp and
+     * window.retryOtp optional, so storing them
+     * after checking their types guarantees that
+     * they are callable inside the callbacks.
+     */
+
+    const sendOtp = window.sendOtp;
+    const retryOtp = window.retryOtp;
+
+    if (typeof sendOtp !== "function" || typeof retryOtp !== "function") {
+      setError("MSG91 OTP service is not ready.");
       return;
     }
 
-    const reqId =
-      sessionStorage.getItem(
-        "msg91_req_id",
-      );
+    const reqId = sessionStorage.getItem("msg91_req_id");
 
     /*
-     * If there is no request ID,
-     * send a completely new OTP.
+     * ==============================================
+     * IF NO REQUEST ID
+     * SEND A COMPLETELY NEW OTP
+     * ==============================================
      */
 
     if (!reqId) {
@@ -849,68 +643,60 @@ export default function RegisterPage() {
 
       const identifier = `91${mobile}`;
 
-      window.sendOtp(
-        identifier,
+      try {
+        sendOtp(
+          identifier,
 
-        /* SUCCESS */
-        (data) => {
-          const newReqId =
-            getReqId(data);
+          /* SUCCESS */
+          (data) => {
+            const newReqId = getReqId(data);
 
-          if (newReqId) {
-            sessionStorage.setItem(
-              "msg91_req_id",
-              newReqId,
-            );
-          }
+            if (newReqId) {
+              sessionStorage.setItem("msg91_req_id", newReqId);
+            }
 
-          sessionStorage.setItem(
-            "msg91_mobile",
-            mobile,
-          );
+            sessionStorage.setItem("msg91_mobile", mobile);
 
-          setOtp("");
-          setResending(false);
-          setError("");
-        },
+            setOtp("");
+            setResending(false);
+            setError("");
+          },
 
-        /* FAILURE */
-        (error) => {
-          setResending(false);
+          /* FAILURE */
+          (error) => {
+            setResending(false);
 
-          setError(
-            getMsg91ErrorMessage(
-              error,
-              "Unable to resend OTP.",
-            ),
-          );
-        },
-      );
+            setError(getMsg91ErrorMessage(error, "Unable to resend OTP."));
+          },
+        );
+      } catch (error) {
+        setResending(false);
+
+        setError(getMsg91ErrorMessage(error, "Unable to resend OTP."));
+      }
 
       return;
     }
 
     /*
-     * Retry existing OTP
+     * ==============================================
+     * RETRY EXISTING OTP
+     * ==============================================
      */
 
     setResending(true);
     setError("");
 
     try {
-      window.retryOtp(
+      retryOtp(
         null,
 
         /* SUCCESS */
         (data) => {
-          const newReqId =
-            getReqId(data);
+          const newReqId = getReqId(data);
 
           if (newReqId) {
-            sessionStorage.setItem(
-              "msg91_req_id",
-              newReqId,
-            );
+            sessionStorage.setItem("msg91_req_id", newReqId);
           }
 
           setOtp("");
@@ -936,10 +722,7 @@ export default function RegisterPage() {
       setResending(false);
 
       setError(
-        getMsg91ErrorMessage(
-          error,
-          "Unable to resend OTP. Please try again.",
-        ),
+        getMsg91ErrorMessage(error, "Unable to resend OTP. Please try again."),
       );
     }
   };
@@ -949,33 +732,19 @@ export default function RegisterPage() {
 ========================================================= */
 
   const handleChangeDetails = () => {
-    sessionStorage.removeItem(
-      "msg91_req_id",
-    );
+    sessionStorage.removeItem("msg91_req_id");
 
-    sessionStorage.removeItem(
-      "msg91_mobile",
-    );
+    sessionStorage.removeItem("msg91_mobile");
 
-    sessionStorage.removeItem(
-      "register_name",
-    );
+    sessionStorage.removeItem("register_name");
 
-    sessionStorage.removeItem(
-      "register_designation",
-    );
+    sessionStorage.removeItem("register_designation");
 
-    sessionStorage.removeItem(
-      "register_companyName",
-    );
+    sessionStorage.removeItem("register_companyName");
 
-    sessionStorage.removeItem(
-      "register_email",
-    );
+    sessionStorage.removeItem("register_email");
 
-    sessionStorage.removeItem(
-      "register_profession",
-    );
+    sessionStorage.removeItem("register_profession");
 
     setOtp("");
     setStep("details");
@@ -986,9 +755,7 @@ export default function RegisterPage() {
      FORM SUBMIT
 ========================================================= */
 
-  const handleSubmit = (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (loading) {
@@ -1029,10 +796,7 @@ export default function RegisterPage() {
     <main className="relative min-h-screen overflow-hidden">
       {/* MSG91 */}
 
-      <Msg91Otp
-        onReady={handleMsg91Ready}
-        onError={handleMsg91Error}
-      />
+      <Msg91Otp onReady={handleMsg91Ready} onError={handleMsg91Error} />
 
       {/* Background */}
 
@@ -1092,13 +856,11 @@ export default function RegisterPage() {
             >
               {step === "details" ? (
                 <>
-                  Create Account{" "}
-                  <span>👋</span>
+                  Create Account <span>👋</span>
                 </>
               ) : (
                 <>
-                  Verify OTP{" "}
-                  <span>🔐</span>
+                  Verify OTP <span>🔐</span>
                 </>
               )}
             </h1>
@@ -1159,11 +921,7 @@ export default function RegisterPage() {
                   whitespace-nowrap
                   text-[13px]
                   font-medium
-                  ${
-                    step === "details"
-                      ? "text-[#663cff]"
-                      : "text-slate-400"
-                  }
+                  ${step === "details" ? "text-[#663cff]" : "text-slate-400"}
                 `}
               >
                 Your Details
@@ -1178,11 +936,7 @@ export default function RegisterPage() {
                 h-[1px]
                 flex-1
                 transition-all
-                ${
-                  step === "otp"
-                    ? "bg-[#6d42ef]"
-                    : "bg-[#dfe2ee]"
-                }
+                ${step === "otp" ? "bg-[#6d42ef]" : "bg-[#dfe2ee]"}
               `}
             />
 
@@ -1215,11 +969,7 @@ export default function RegisterPage() {
                   whitespace-nowrap
                   text-[13px]
                   font-medium
-                  ${
-                    step === "otp"
-                      ? "text-[#663cff]"
-                      : "text-slate-400"
-                  }
+                  ${step === "otp" ? "text-[#663cff]" : "text-slate-400"}
                 `}
               >
                 OTP Verification
@@ -1229,10 +979,7 @@ export default function RegisterPage() {
 
           {/* Form */}
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-8"
-          >
+          <form onSubmit={handleSubmit} className="mt-8">
             {/* DETAILS */}
 
             {step === "details" && (
@@ -1258,9 +1005,7 @@ export default function RegisterPage() {
                   Full Name
                 </label>
 
-                <div
-                  className={`${inputWrapper} mb-3`}
-                >
+                <div className={`${inputWrapper} mb-3`}>
                   <User
                     className="
                       mr-3
@@ -1277,9 +1022,7 @@ export default function RegisterPage() {
                     type="text"
                     autoComplete="name"
                     value={name}
-                    onChange={
-                      handleNameChange
-                    }
+                    onChange={handleNameChange}
                     placeholder="Enter your full name"
                     className="
                       w-full
@@ -1307,9 +1050,7 @@ export default function RegisterPage() {
                   Designation
                 </label>
 
-                <div
-                  className={`${inputWrapper} mb-3`}
-                >
+                <div className={`${inputWrapper} mb-3`}>
                   <BriefcaseBusiness
                     className="
                       mr-3
@@ -1325,9 +1066,7 @@ export default function RegisterPage() {
                     name="designation"
                     type="text"
                     value={designation}
-                    onChange={
-                      handleDesignationChange
-                    }
+                    onChange={handleDesignationChange}
                     placeholder="e.g. Software Developer"
                     className="
                       w-full
@@ -1355,9 +1094,7 @@ export default function RegisterPage() {
                   Company Name
                 </label>
 
-                <div
-                  className={`${inputWrapper} mb-3`}
-                >
+                <div className={`${inputWrapper} mb-3`}>
                   <Building2
                     className="
                       mr-3
@@ -1373,9 +1110,7 @@ export default function RegisterPage() {
                     name="companyName"
                     type="text"
                     value={companyName}
-                    onChange={
-                      handleCompanyNameChange
-                    }
+                    onChange={handleCompanyNameChange}
                     placeholder="Enter company name"
                     className="
                       w-full
@@ -1403,9 +1138,7 @@ export default function RegisterPage() {
                   Email Address
                 </label>
 
-                <div
-                  className={`${inputWrapper} mb-3`}
-                >
+                <div className={`${inputWrapper} mb-3`}>
                   <Mail
                     className="
                       mr-3
@@ -1422,9 +1155,7 @@ export default function RegisterPage() {
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={
-                      handleEmailChange
-                    }
+                    onChange={handleEmailChange}
                     placeholder="Enter your email"
                     className="
                       w-full
@@ -1465,11 +1196,7 @@ export default function RegisterPage() {
                     focus-within:border-[#7650ed]
                     focus-within:ring-4
                     focus-within:ring-[#7650ed]/10
-                    ${
-                      error
-                        ? "border-red-400"
-                        : "border-[#dfe3ed]"
-                    }
+                    ${error ? "border-red-400" : "border-[#dfe3ed]"}
                   `}
                 >
                   <div
@@ -1510,9 +1237,7 @@ export default function RegisterPage() {
                     inputMode="numeric"
                     autoComplete="tel"
                     value={mobile}
-                    onChange={
-                      handleMobileChange
-                    }
+                    onChange={handleMobileChange}
                     placeholder="Enter mobile number"
                     className="
                       min-w-0
@@ -1542,9 +1267,7 @@ export default function RegisterPage() {
                   Profession / Industry
                 </label>
 
-                <div
-                  className={`${inputWrapper} mb-3`}
-                >
+                <div className={`${inputWrapper} mb-3`}>
                   <BriefcaseBusiness
                     className="
                       mr-3
@@ -1560,9 +1283,7 @@ export default function RegisterPage() {
                     name="profession"
                     type="text"
                     value={profession}
-                    onChange={
-                      handleProfessionChange
-                    }
+                    onChange={handleProfessionChange}
                     placeholder="e.g. IT, Finance, Marketing"
                     className="
                       w-full
@@ -1607,11 +1328,7 @@ export default function RegisterPage() {
                     focus-within:border-[#7650ed]
                     focus-within:ring-4
                     focus-within:ring-[#7650ed]/10
-                    ${
-                      error
-                        ? "border-red-400"
-                        : "border-[#dfe3ed]"
-                    }
+                    ${error ? "border-red-400" : "border-[#dfe3ed]"}
                   `}
                 >
                   <ShieldCheck
@@ -1631,9 +1348,7 @@ export default function RegisterPage() {
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={otp}
-                    onChange={
-                      handleOtpChange
-                    }
+                    onChange={handleOtpChange}
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     autoFocus
@@ -1666,9 +1381,7 @@ export default function RegisterPage() {
                 >
                   <button
                     type="button"
-                    onClick={
-                      handleChangeDetails
-                    }
+                    onClick={handleChangeDetails}
                     className="
                       font-medium
                       text-slate-500
@@ -1681,13 +1394,8 @@ export default function RegisterPage() {
 
                   <button
                     type="button"
-                    onClick={
-                      handleResendOtp
-                    }
-                    disabled={
-                      loading ||
-                      resending
-                    }
+                    onClick={handleResendOtp}
+                    disabled={loading || resending}
                     className="
                       font-semibold
                       text-[#6d42ef]
@@ -1696,9 +1404,7 @@ export default function RegisterPage() {
                       disabled:opacity-50
                     "
                   >
-                    {resending
-                      ? "Sending..."
-                      : "Resend OTP"}
+                    {resending ? "Sending..." : "Resend OTP"}
                   </button>
                 </div>
               </>
@@ -1729,11 +1435,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={
-                loading ||
-                (step === "details" &&
-                  !msg91Ready)
-              }
+              disabled={loading || (step === "details" && !msg91Ready)}
               className="
                 mt-5
                 flex
@@ -1800,9 +1502,7 @@ export default function RegisterPage() {
                 text-[#8a95ad]
               "
             >
-              <span>
-                Already have an account?{" "}
-              </span>
+              <span>Already have an account? </span>
 
               <Link
                 href="/login"
@@ -1841,10 +1541,7 @@ export default function RegisterPage() {
                 "
               />
 
-              <span>
-                We never share your number
-                with anyone
-              </span>
+              <span>We never share your number with anyone</span>
             </div>
           </form>
         </div>

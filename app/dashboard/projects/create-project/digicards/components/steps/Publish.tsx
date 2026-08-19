@@ -19,15 +19,23 @@ import {
 import { useDigitalCard } from "../DigitalCardEditor";
 
 type PublishProps = {
-  onEditSection: (step: number) => void;
-  onPublish: () => void;
+  onEditSection?: (step: number) => void;
+  onPublish?: () => void;
 };
 
 export default function Publish({
-  onEditSection,
-  onPublish,
+  onEditSection = () => {},
+  onPublish = () => {},
 }: PublishProps) {
   const { card } = useDigitalCard();
+
+  const publishCard = card as typeof card & {
+    username?: string;
+    name?: string;
+    phone?: string;
+    services?: unknown[];
+    template?: string;
+  };
 
   const [publishType, setPublishType] =
     useState<"now" | "schedule" | "draft">("now");
@@ -37,7 +45,7 @@ export default function Publish({
   const cardLink =
     card.cardLink ||
     `https://miniweb.in/${
-      card.username || "your-card"
+      publishCard.username || "your-card"
     }`;
 
   /*
@@ -48,9 +56,7 @@ export default function Publish({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(
-        cardLink
-      );
+      await navigator.clipboard.writeText(cardLink);
 
       setCopied(true);
 
@@ -58,10 +64,7 @@ export default function Publish({
         setCopied(false);
       }, 2000);
     } catch (error) {
-      console.error(
-        "Unable to copy link",
-        error
-      );
+      console.error("Unable to copy link", error);
     }
   };
 
@@ -85,10 +88,8 @@ export default function Publish({
       icon: <User size={13} />,
       title: "Personal Information",
 
-      value: `${card.name || card.fullName || "Your Name"}${
-        card.designation
-          ? `, ${card.designation}`
-          : ""
+      value: `${publishCard.name || card.fullName || "Your Name"}${
+        card.designation ? `, ${card.designation}` : ""
       }`,
 
       editStep: 1,
@@ -100,25 +101,16 @@ export default function Publish({
 
       value:
         [
-          card.phone || card.mobile
-            ? "Phone"
-            : null,
+          publishCard.phone || card.mobile ? "Phone" : null,
 
-          card.email
-            ? "Email"
-            : null,
+          card.email ? "Email" : null,
 
-          card.website
-            ? "Website"
-            : null,
+          card.website ? "Website" : null,
 
-          card.address
-            ? "Address"
-            : null,
+          card.address ? "Address" : null,
         ]
           .filter(Boolean)
-          .join(", ") ||
-        "No contact details added",
+          .join(", ") || "No contact details added",
 
       editStep: 2,
     },
@@ -137,12 +129,10 @@ export default function Publish({
       title: "Business Details",
 
       value:
-        card.services &&
-        card.services.length > 0
-          ? `${card.services.length} service${
-              card.services.length === 1
-                ? ""
-                : "s"
+        publishCard.services &&
+        publishCard.services.length > 0
+          ? `${publishCard.services.length} service${
+              publishCard.services.length === 1 ? "" : "s"
             } added`
           : "No services added",
 
@@ -153,8 +143,7 @@ export default function Publish({
       icon: <ImageIcon size={13} />,
       title: "Portfolio / Gallery",
 
-      value:
-        "Gallery content and media",
+      value: "Gallery content and media",
 
       editStep: 5,
     },
@@ -163,8 +152,7 @@ export default function Publish({
       icon: <Settings size={13} />,
       title: "Actions & Settings",
 
-      value:
-        "Actions, custom button and settings",
+      value: "Actions, custom button and settings",
 
       editStep: 6,
     },
@@ -174,7 +162,8 @@ export default function Publish({
       title: "Design & Template",
 
       value:
-        card.template ||
+        publishCard.template ||
+        card.templateId ||
         "Default Template",
 
       /*
@@ -188,13 +177,11 @@ export default function Publish({
 
   return (
     <div className="w-full max-w-[760px]">
-
       {/* =================================================
           HEADER
       ================================================= */}
 
       <div className="mb-[20px]">
-
         <h1 className="text-[15px] font-semibold leading-[20px] text-[#222]">
           Step 7 - Review & Publish
         </h1>
@@ -203,7 +190,6 @@ export default function Publish({
           Review your card details and publish
           your digital visiting card.
         </p>
-
       </div>
 
       {/* =================================================
@@ -211,20 +197,12 @@ export default function Publish({
       ================================================= */}
 
       <div className="rounded-[6px] border border-[#e5e5e5] bg-white px-[11px] py-[10px]">
-
         <div className="flex items-start gap-[9px]">
-
           <div className="flex h-[21px] w-[21px] shrink-0 items-center justify-center rounded-full bg-[#dff7e9] text-[#32b86c]">
-
-            <Check
-              size={13}
-              strokeWidth={3}
-            />
-
+            <Check size={13} strokeWidth={3} />
           </div>
 
           <div className="min-w-0">
-
             <p className="text-[9px] font-semibold leading-[12px] text-[#333]">
               Your card is ready to go live!
             </p>
@@ -233,7 +211,6 @@ export default function Publish({
               Please review the details below
               before publishing.
             </p>
-
           </div>
         </div>
 
@@ -242,27 +219,18 @@ export default function Publish({
         ================================================= */}
 
         <div className="mt-[9px] overflow-hidden rounded-[5px] border border-[#eeeeee]">
-
-          {sections.map(
-            (section, index) => (
-              <ReviewItem
-                key={section.title}
-                icon={section.icon}
-                title={section.title}
-                value={section.value}
-                last={
-                  index ===
-                  sections.length - 1
-                }
-                onEdit={() =>
-                  onEditSection(
-                    section.editStep
-                  )
-                }
-              />
-            )
-          )}
-
+          {sections.map((section, index) => (
+            <ReviewItem
+              key={section.title}
+              icon={section.icon}
+              title={section.title}
+              value={section.value}
+              last={index === sections.length - 1}
+              onEdit={() =>
+                onEditSection(section.editStep)
+              }
+            />
+          ))}
         </div>
       </div>
 
@@ -271,9 +239,7 @@ export default function Publish({
       ================================================= */}
 
       <div className="mt-[10px] rounded-[6px] border border-[#e5e5e5] bg-white px-[10px] py-[10px]">
-
         <div className="mb-[10px]">
-
           <h2 className="text-[9px] font-semibold text-[#333]">
             Publishing Settings
           </h2>
@@ -282,33 +248,24 @@ export default function Publish({
             Choose how you want to publish your
             card.
           </p>
-
         </div>
 
         <div className="grid grid-cols-2 gap-[18px]">
-
           {/* LEFT */}
 
           <div className="space-y-[9px]">
-
             {/* PUBLISH NOW */}
 
             <PublishOption
-              selected={
-                publishType === "now"
-              }
-              onClick={() =>
-                setPublishType("now")
-              }
+              selected={publishType === "now"}
+              onClick={() => setPublishType("now")}
               title={
                 <span className="flex items-center gap-[5px]">
-
                   Publish Now
 
                   <span className="rounded-[3px] bg-[#e4f8eb] px-[4px] py-[1px] text-[6px] font-semibold text-[#32a866]">
                     Recommended
                   </span>
-
                 </span>
               }
               description="Make your card live immediately."
@@ -317,13 +274,9 @@ export default function Publish({
             {/* SCHEDULE */}
 
             <PublishOption
-              selected={
-                publishType === "schedule"
-              }
+              selected={publishType === "schedule"}
               onClick={() =>
-                setPublishType(
-                  "schedule"
-                )
+                setPublishType("schedule")
               }
               title="Schedule for Later"
               description="Choose date and time to publish."
@@ -332,34 +285,25 @@ export default function Publish({
             {/* DRAFT */}
 
             <PublishOption
-              selected={
-                publishType === "draft"
-              }
-              onClick={() =>
-                setPublishType("draft")
-              }
+              selected={publishType === "draft"}
+              onClick={() => setPublishType("draft")}
               title="Keep as Draft"
               description="Continue editing later."
             />
-
           </div>
 
           {/* RIGHT */}
 
           <div>
-
             <p className="text-[8px] font-semibold text-[#444]">
               Card Link (Your Unique Link)
             </p>
 
             <div className="mt-[5px] flex h-[27px] items-center overflow-hidden rounded-[4px] border border-[#dedede] bg-white">
-
               <div className="min-w-0 flex-1 px-[7px]">
-
                 <p className="truncate text-[7px] text-[#666]">
                   {cardLink}
                 </p>
-
               </div>
 
               <button
@@ -381,7 +325,6 @@ export default function Publish({
                   hover:bg-[#faf8ff]
                 "
               >
-
                 {copied ? (
                   <>
                     <Check size={9} />
@@ -393,13 +336,10 @@ export default function Publish({
                     Copy
                   </>
                 )}
-
               </button>
-
             </div>
 
             <div className="mt-[9px]">
-
               <p className="text-[8px] font-semibold text-[#444]">
                 Card Status
               </p>
@@ -407,9 +347,7 @@ export default function Publish({
               <span className="mt-[4px] inline-flex rounded-[3px] bg-[#e4f8eb] px-[6px] py-[2px] text-[6px] font-semibold text-[#32a866]">
                 Ready to Publish
               </span>
-
             </div>
-
           </div>
         </div>
       </div>
@@ -419,7 +357,6 @@ export default function Publish({
       ================================================= */}
 
       <div className="mt-[14px] flex justify-end">
-
         {/* <button
           type="button"
           onClick={onPublish}
@@ -445,15 +382,11 @@ export default function Publish({
             disabled:opacity-50
           "
         >
-
           <Rocket size={11} />
 
           Publish & Live
-
         </button> */}
-
       </div>
-
     </div>
   );
 }
@@ -490,7 +423,6 @@ function ReviewItem({
         }
       `}
     >
-
       {/* ICON */}
 
       <div className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[4px] bg-[#f1edff] text-[#6335e9]">
@@ -500,7 +432,6 @@ function ReviewItem({
       {/* TEXT */}
 
       <div className="min-w-0 flex-1">
-
         <p className="text-[7px] font-medium leading-[10px] text-[#555]">
           {title}
         </p>
@@ -508,7 +439,6 @@ function ReviewItem({
         <p className="mt-[1px] truncate text-[7px] leading-[10px] text-[#888]">
           {value}
         </p>
-
       </div>
 
       {/* EDIT */}
@@ -529,13 +459,10 @@ function ReviewItem({
           hover:text-[#4e25c7]
         "
       >
-
         Edit
 
         <ChevronRight size={9} />
-
       </button>
-
     </div>
   );
 }
@@ -561,7 +488,6 @@ function PublishOption({
       onClick={onClick}
       className="flex w-full items-start gap-[6px] text-left"
     >
-
       {/* RADIO */}
 
       <span
@@ -582,15 +508,12 @@ function PublishOption({
           }
         `}
       >
-
         {selected && (
           <span className="h-[5px] w-[5px] rounded-full bg-[#6335e9]" />
         )}
-
       </span>
 
       <span>
-
         <span className="block text-[8px] font-medium leading-[10px] text-[#444]">
           {title}
         </span>
@@ -598,9 +521,7 @@ function PublishOption({
         <span className="mt-[2px] block text-[6px] leading-[9px] text-[#999]">
           {description}
         </span>
-
       </span>
-
     </button>
   );
 }
@@ -610,8 +531,7 @@ function PublishOption({
 ========================================================= */
 
 function getSocialCount(card: any) {
-  const socialLinks =
-    card.socialLinks ?? {};
+  const socialLinks = card.socialLinks ?? {};
 
   const count = [
     socialLinks.facebook,

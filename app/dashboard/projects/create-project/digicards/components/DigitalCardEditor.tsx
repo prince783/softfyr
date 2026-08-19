@@ -285,12 +285,12 @@ function normalizeGallery(
 
       return null;
     })
-    .filter(
-      (item): item is GalleryImage =>
-        Boolean(item) &&
-        typeof item.url === "string" &&
-        item.url.trim().length > 0
-    );
+   .filter(
+  (item): item is GalleryImage =>
+    item !== null &&
+    typeof item.url === "string" &&
+    item.url.trim().length > 0
+);
 }
 
 /* =========================================================
@@ -395,7 +395,7 @@ function normalizeCertificates(
         certificate
       ): certificate is GalleryCertificate =>
         Boolean(certificate) &&
-        typeof certificate.url === "string" &&
+        typeof certificate?.url === "string" &&
         certificate.url.trim().length > 0
     );
 }
