@@ -20,7 +20,9 @@ interface RouteContext {
    HELPERS
 ========================================================= */
 
-function isObject(value: unknown): value is Record<string, unknown> {
+function isObject(
+  value: unknown
+): value is Record<string, unknown> {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -111,7 +113,7 @@ export async function PATCH(
     }
 
     /* =====================================================
-       BODY
+       REQUEST BODY
     ===================================================== */
 
     const body = await request.json();
@@ -127,11 +129,7 @@ export async function PATCH(
     }
 
     /* =====================================================
-       FIND CARD FIRST
-       
-       We use findById + save instead of relying only on
-       findByIdAndUpdate. This makes nested arrays such as
-       gallery/certificates much safer.
+       FIND CARD
     ===================================================== */
 
     const card = await DigitalCard.findById(id);
@@ -144,6 +142,36 @@ export async function PATCH(
         },
         { status: 404 }
       );
+    }
+
+    /* =====================================================
+       USERNAME
+    ===================================================== */
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "username"
+      )
+    ) {
+      if (
+        typeof body.username !== "string"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Username must be a string",
+          },
+          { status: 400 }
+        );
+      }
+
+      const username = body.username
+        .trim()
+        .toLowerCase();
+
+      card.username = username;
     }
 
     /* =====================================================
@@ -178,7 +206,138 @@ export async function PATCH(
           field
         )
       ) {
-        (card as any)[field] = body[field];
+        (card as any)[field] =
+          body[field];
+      }
+    }
+
+    /* =====================================================
+       PAYMENT & PUBLICATION
+    ===================================================== */
+
+    const validPaymentStatuses = [
+      "pending",
+      "paid",
+      "failed",
+    ];
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+       body,
+       "paymentStatus"
+      )
+    ) {
+      const paymentStatus = body.paymentStatus;
+
+      if (
+       typeof paymentStatus !== "string" ||
+       !validPaymentStatuses.includes(
+         paymentStatus
+       )
+      ) {
+       return NextResponse.json(
+         {
+           success: false,
+           message:
+             "paymentStatus must be one of: pending, paid, failed",
+         },
+         { status: 400 }
+       );
+      }
+
+      card.paymentStatus = paymentStatus;
+
+      if (paymentStatus === "paid") {
+       card.isPublished = true;
+       if (!card.paidAt) {
+         card.paidAt = new Date();
+       }
+      }
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+       body,
+       "paymentId"
+      )
+    ) {
+      card.paymentId =
+       body.paymentId === null ||
+       body.paymentId === undefined
+         ? null
+         : String(body.paymentId);
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+       body,
+       "paidAt"
+      )
+    ) {
+      if (body.paidAt === null) {
+       card.paidAt = null;
+      } else if (
+       body.paidAt === undefined ||
+       body.paidAt === ""
+      ) {
+       card.paidAt = null;
+      } else {
+       const paidAtDate =
+         body.paidAt instanceof Date
+           ? body.paidAt
+           : new Date(body.paidAt as string);
+
+       if (Number.isNaN(paidAtDate.getTime())) {
+         return NextResponse.json(
+           {
+             success: false,
+             message: "paidAt must be a valid date",
+           },
+           { status: 400 }
+         );
+       }
+
+       card.paidAt = paidAtDate;
+      }
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+       body,
+       "isPublished"
+      )
+    ) {
+      if (typeof body.isPublished !== "boolean") {
+       return NextResponse.json(
+         {
+           success: false,
+           message: "isPublished must be a boolean",
+         },
+         { status: 400 }
+       );
+      }
+
+      if (
+       body.isPublished === true &&
+       card.paymentStatus !== "paid"
+      ) {
+       return NextResponse.json(
+         {
+           success: false,
+           message:
+             "isPublished can only be true after payment is marked as paid",
+         },
+         { status: 400 }
+       );
+      }
+
+      card.isPublished = body.isPublished;
+    }
+
+    if (card.paymentStatus === "paid") {
+      card.isPublished = true;
+      if (!card.paidAt) {
+       card.paidAt = new Date();
       }
     }
 
@@ -196,7 +355,8 @@ export async function PATCH(
         return NextResponse.json(
           {
             success: false,
-            message: "Invalid businessDetails data",
+            message:
+              "Invalid businessDetails data",
           },
           { status: 400 }
         );
@@ -207,9 +367,12 @@ export async function PATCH(
         ...(body.businessDetails as any),
 
         workingHours: {
-          ...(card.businessDetails?.workingHours || {}),
-          ...((body.businessDetails as any)
-            .workingHours || {}),
+          ...(card.businessDetails
+            ?.workingHours || {}),
+          ...(
+            (body.businessDetails as any)
+              .workingHours || {}
+          ),
         },
       } as any;
     }
@@ -228,7 +391,8 @@ export async function PATCH(
         return NextResponse.json(
           {
             success: false,
-            message: "Invalid socialLinks data",
+            message:
+              "Invalid socialLinks data",
           },
           { status: 400 }
         );
@@ -242,16 +406,6 @@ export async function PATCH(
 
     /* =====================================================
        GALLERY
-       
-       Expected:
-       
-       gallery: [
-         {
-           url: "/uploads/gallery/abc.jpg",
-           publicId: "...",
-           name: "abc.jpg"
-         }
-       ]
     ===================================================== */
 
     if (
@@ -264,7 +418,8 @@ export async function PATCH(
         return NextResponse.json(
           {
             success: false,
-            message: "Gallery must be an array",
+            message:
+              "Gallery must be an array",
           },
           { status: 400 }
         );
@@ -288,7 +443,8 @@ export async function PATCH(
           return NextResponse.json(
             {
               success: false,
-              message: "Invalid gallery image",
+              message:
+                "Invalid gallery image",
             },
             { status: 400 }
           );
@@ -321,18 +477,7 @@ export async function PATCH(
         });
       }
 
-      /*
-       * IMPORTANT:
-       * Replace the entire gallery with the latest
-       * frontend gallery.
-       */
-
       card.gallery = gallery as any;
-
-      console.log(
-        "GALLERY SAVING:",
-        card.gallery
-      );
     }
 
     /* =====================================================
@@ -349,7 +494,8 @@ export async function PATCH(
         return NextResponse.json(
           {
             success: false,
-            message: "Videos must be an array",
+            message:
+              "Videos must be an array",
           },
           { status: 400 }
         );
@@ -362,7 +508,8 @@ export async function PATCH(
           return NextResponse.json(
             {
               success: false,
-              message: "Invalid video data",
+              message:
+                "Invalid video data",
             },
             { status: 400 }
           );
@@ -375,7 +522,8 @@ export async function PATCH(
           return NextResponse.json(
             {
               success: false,
-              message: "Video URL is required",
+              message:
+                "Video URL is required",
             },
             { status: 400 }
           );
@@ -405,19 +553,7 @@ export async function PATCH(
     }
 
     /* =====================================================
-       CERTIFICATES / PDF
-       
-       Expected:
-       
-       certificates: [
-         {
-           id: "...",
-           name: "certificate.pdf",
-           size: 123456,
-           url: "/uploads/certificates/abc.pdf",
-           publicId: "..."
-         }
-       ]
+       CERTIFICATES
     ===================================================== */
 
     if (
@@ -426,7 +562,9 @@ export async function PATCH(
         "certificates"
       )
     ) {
-      if (!Array.isArray(body.certificates)) {
+      if (
+        !Array.isArray(body.certificates)
+      ) {
         return NextResponse.json(
           {
             success: false,
@@ -450,7 +588,9 @@ export async function PATCH(
 
       const certificates = [];
 
-      for (const certificate of body.certificates) {
+      for (
+        const certificate of body.certificates
+      ) {
         if (!isObject(certificate)) {
           return NextResponse.json(
             {
@@ -493,7 +633,8 @@ export async function PATCH(
           url: certificate.url,
 
           publicId:
-            typeof certificate.publicId === "string"
+            typeof certificate.publicId ===
+            "string"
               ? certificate.publicId
               : "",
 
@@ -506,41 +647,22 @@ export async function PATCH(
         });
       }
 
-      /*
-       * IMPORTANT:
-       * Save the complete PDF array.
-       */
-
-      card.certificates = certificates as any;
-
-      console.log(
-        "CERTIFICATES SAVING:",
-        card.certificates
-      );
+      card.certificates =
+        certificates as any;
     }
 
     /* =====================================================
-       SAVE MONGOOSE DOCUMENT
+       SAVE CARD
     ===================================================== */
 
     await card.save();
 
     /* =====================================================
-       RETURN FRESH CARD FROM DATABASE
+       GET UPDATED CARD
     ===================================================== */
 
     const savedCard =
       await DigitalCard.findById(id).lean();
-
-    console.log(
-      "SAVED GALLERY:",
-      savedCard?.gallery
-    );
-
-    console.log(
-      "SAVED CERTIFICATES:",
-      savedCard?.certificates
-    );
 
     return NextResponse.json({
       success: true,
@@ -553,6 +675,20 @@ export async function PATCH(
       "UPDATE DIGITAL CARD ERROR:",
       error
     );
+
+    if (
+      error instanceof Error &&
+      error.message.includes("duplicate key")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This username is already taken",
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
       {
@@ -597,7 +733,8 @@ export async function DELETE(
       return NextResponse.json(
         {
           success: false,
-          message: "Digital card not found",
+          message:
+            "Digital card not found",
         },
         { status: 404 }
       );

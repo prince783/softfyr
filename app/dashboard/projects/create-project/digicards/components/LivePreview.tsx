@@ -1001,6 +1001,1294 @@ function FullPreview() {
     </div>
   );
 }
+/* =========================================================
+   PUBLIC FULL CARD PREVIEW
+   Used by PublicCardClient.tsx
+
+   IMPORTANT:
+   This does NOT replace the existing LivePreview.
+   It is a separate complete public-card renderer.
+========================================================= */
+
+export function PublicCardPreview({
+  template = "template-1",
+}: {
+  template?: string;
+}) {
+  const { card } = useDigitalCard();
+
+  const activeTemplate =
+    template || card.templateId || "template-1";
+
+  const templateData = getTemplateData(activeTemplate);
+
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center bg-[#eef1f5] px-3 py-5 sm:px-6">
+      {/* =====================================================
+          PHONE / CARD FRAME
+      ===================================================== */}
+
+      <div
+        className="
+          relative
+          w-full
+          max-w-[390px]
+          overflow-hidden
+          rounded-[32px]
+          border-[5px]
+          border-[#202020]
+          bg-white
+          shadow-[0_25px_70px_rgba(0,0,0,0.25)]
+        "
+      >
+        {/* =================================================
+            TOP HEADER
+        ================================================= */}
+
+        <PublicHeader
+          card={card}
+          templateData={templateData}
+        />
+
+        {/* =================================================
+            MAIN CONTENT
+        ================================================= */}
+
+        <div className="bg-white px-[14px] pb-[85px] pt-[10px]">
+
+          {/* -----------------------------------------------
+              QUICK CONTACT ACTIONS
+          ------------------------------------------------ */}
+
+          <PublicQuickActions card={card} />
+
+          {/* -----------------------------------------------
+              LOCATION + WORKING HOURS
+          ------------------------------------------------ */}
+
+          <PublicLocationHours
+            card={card}
+            accent={templateData.accent}
+          />
+
+          {/* -----------------------------------------------
+              ABOUT
+          ------------------------------------------------ */}
+
+          <PublicAbout
+            card={card}
+            accent={templateData.accent}
+          />
+
+          {/* -----------------------------------------------
+              SERVICES
+          ------------------------------------------------ */}
+
+          <PublicServices
+            card={card}
+            accent={templateData.accent}
+          />
+
+          {/* -----------------------------------------------
+              SOCIAL LINKS
+          ------------------------------------------------ */}
+
+          <PublicSocialLinks
+            card={card}
+            accent={templateData.accent}
+          />
+
+          {/* -----------------------------------------------
+              GALLERY
+          ------------------------------------------------ */}
+
+          <PublicGallery
+            card={card}
+            accent={templateData.accent}
+          />
+
+          {/* -----------------------------------------------
+              VIDEOS
+          ------------------------------------------------ */}
+
+          <PublicVideos
+            card={card}
+            accent={templateData.accent}
+          />
+        </div>
+
+        {/* =================================================
+            SAVE CONTACT
+        ================================================= */}
+
+        <PublicSaveContact
+          card={card}
+          templateData={templateData}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   TYPES USED ONLY BY PUBLIC PREVIEW
+========================================================= */
+
+type PublicGalleryItem = {
+  url?: string;
+  title?: string;
+};
+
+type PublicVideoItem = {
+  url?: string;
+  thumbnail?: string;
+  title?: string;
+  duration?: string;
+};
+
+type PublicCardExtraData = {
+  coverImage?: string;
+
+  videos?: PublicVideoItem[];
+
+  businessDetails?: {
+    services?: string[];
+
+    workingHours?: {
+      weekday?: {
+        from?: string;
+        to?: string;
+      };
+
+      weekend?: {
+        from?: string;
+        to?: string;
+      };
+    };
+
+    videos?: PublicVideoItem[];
+  };
+};
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+function PublicHeader({
+  card,
+  templateData,
+}: {
+  card: DigitalCardData;
+  templateData: ReturnType<typeof getTemplateData>;
+}) {
+  const extraCard = card as DigitalCardData & PublicCardExtraData;
+
+  const coverImage = extraCard.coverImage;
+
+  return (
+    <div className="relative">
+
+      {/* ================================================
+          COVER AREA
+      ================================================= */}
+
+      <div
+        className="relative h-[145px] overflow-hidden"
+        style={{
+          background: templateData.background,
+        }}
+      >
+
+        {/* Optional cover image */}
+
+        {coverImage ? (
+          <img
+            src={coverImage}
+            alt="Cover"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <>
+            {/* Decorative shapes */}
+
+            <div className="absolute -left-[60px] -top-[30px] h-[150px] w-[230px] rotate-[35deg] bg-white/10" />
+
+            <div className="absolute -left-[90px] top-[60px] h-[100px] w-[240px] rotate-[30deg] bg-white/15" />
+
+            <div className="absolute right-[-40px] top-[10px] h-[140px] w-[140px] rounded-full border-[18px] border-white/10" />
+
+            <div className="absolute right-[30px] bottom-[-50px] h-[150px] w-[150px] rounded-full bg-white/10" />
+          </>
+        )}
+
+        {/* ============================================
+            SAVE CONTACT
+        ============================================ */}
+
+        <button
+          type="button"
+          onClick={() => downloadVCard(card)}
+          className="
+            absolute
+            left-[12px]
+            top-[12px]
+            z-20
+            flex
+            items-center
+            gap-[5px]
+            rounded-full
+            bg-white
+            px-[10px]
+            py-[6px]
+            text-[9px]
+            font-semibold
+            text-[#123f86]
+            shadow-sm
+          "
+        >
+          <span className="text-[11px]">♙</span>
+          Save Contact
+        </button>
+
+        {/* ============================================
+            SHARE
+        ============================================ */}
+
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              if (navigator.share) {
+                await navigator.share({
+                  title:
+                    card.fullName ||
+                    card.companyName ||
+                    "Digital Visiting Card",
+                  text:
+                    card.tagline ||
+                    card.companyName ||
+                    "Digital Visiting Card",
+                  url: window.location.href,
+                });
+              } else {
+                await navigator.clipboard.writeText(
+                  window.location.href,
+                );
+              }
+            } catch {
+              // User cancelled sharing.
+            }
+          }}
+          className="
+            absolute
+            right-[12px]
+            top-[12px]
+            z-20
+            flex
+            items-center
+            gap-[5px]
+            rounded-full
+            bg-white
+            px-[10px]
+            py-[6px]
+            text-[9px]
+            font-semibold
+            text-[#123f86]
+            shadow-sm
+          "
+        >
+          <span className="text-[11px]">↗</span>
+          Share Card
+        </button>
+      </div>
+
+      {/* =================================================
+          PROFILE IMAGE
+      ================================================= */}
+
+      <div className="relative flex justify-center">
+
+        <div
+          className="
+            absolute
+            -top-[50px]
+            h-[100px]
+            w-[100px]
+            overflow-hidden
+            rounded-full
+            border-[2px]
+            bg-white
+            p-[3px]
+          "
+          style={{
+            borderColor: templateData.accent,
+          }}
+        >
+          {card.profilePhoto ? (
+            <img
+              src={card.profilePhoto}
+              alt={card.fullName || "Profile"}
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-[#ead0bd] text-[30px]">
+              👤
+            </div>
+          )}
+        </div>
+
+        {/* Verified icon */}
+
+        <div
+          className="
+            absolute
+            -right-[50px]
+            -top-[20px]
+            flex
+            h-[22px]
+            w-[22px]
+            items-center
+            justify-center
+            rounded-full
+            border-2
+            border-white
+            bg-[#22c55e]
+            text-[11px]
+            font-bold
+            text-white
+          "
+        >
+          ✓
+        </div>
+      </div>
+
+      {/* =================================================
+          PROFILE TEXT
+      ================================================= */}
+
+      <div className="px-4 pb-[10px] pt-[58px] text-center">
+
+        <h1 className="text-[20px] font-bold leading-[25px] text-[#111827]">
+          {card.fullName || "Your Name"}
+        </h1>
+
+        <p
+          className="mt-[2px] text-[11px] font-semibold"
+          style={{
+            color: templateData.accent,
+          }}
+        >
+          {card.designation || "Designation"}
+        </p>
+
+        <p className="mt-[2px] text-[11px] font-medium text-[#374151]">
+          {card.companyName || "Company Name"}
+        </p>
+
+        <div
+          className="mx-auto mt-[8px] h-[1px] w-[160px]"
+          style={{
+            backgroundColor: `${templateData.accent}55`,
+          }}
+        />
+
+        {card.tagline?.trim() && (
+          <p className="mx-auto mt-[7px] max-w-[260px] text-[9px] leading-[14px] text-[#6b7280]">
+            {card.tagline}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
+function PublicQuickActions({
+  card,
+}: {
+  card: DigitalCardData;
+}) {
+  const showCall = card.showCall ?? true;
+  const showWhatsapp = card.showWhatsapp ?? true;
+  const showEmail = card.showEmail ?? true;
+  const showWebsite = card.showWebsite ?? true;
+
+  return (
+    <div className="grid grid-cols-4 gap-[5px]">
+
+      {showCall && (
+        <PublicAction
+          icon={<Phone size={17} />}
+          label="Call"
+          href={card.mobile ? `tel:${card.mobile}` : undefined}
+        />
+      )}
+
+      {showWhatsapp && (
+        <PublicAction
+          icon={<MessageCircle size={17} />}
+          label="WhatsApp"
+          href={getWhatsappUrl(card.whatsapp || card.mobile)}
+        />
+      )}
+
+      {showEmail && (
+        <PublicAction
+          icon={<Mail size={17} />}
+          label="Email"
+          href={card.email ? `mailto:${card.email}` : undefined}
+        />
+      )}
+
+      {showWebsite && (
+        <PublicAction
+          icon={<Globe size={17} />}
+          label="Website"
+          href={normalizeUrl(card.website)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   PUBLIC ACTION
+========================================================= */
+
+function PublicAction({
+  icon,
+  label,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <div
+        className="
+          flex
+          h-[38px]
+          w-[38px]
+          items-center
+          justify-center
+          rounded-[9px]
+          border
+          border-[#e5e7eb]
+          bg-white
+          text-[#0756b5]
+          shadow-[0_2px_7px_rgba(0,0,0,0.06)]
+        "
+      >
+        {icon}
+      </div>
+
+      <span className="mt-[3px] text-[8px] font-medium text-[#374151]">
+        {label}
+      </span>
+    </>
+  );
+
+  if (!href) {
+    return (
+      <div className="flex flex-col items-center">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target={
+        href.startsWith("http")
+          ? "_blank"
+          : undefined
+      }
+      rel={
+        href.startsWith("http")
+          ? "noopener noreferrer"
+          : undefined
+      }
+      className="flex flex-col items-center"
+    >
+      {content}
+    </a>
+  );
+}
+
+/* =========================================================
+   LOCATION + HOURS
+========================================================= */
+
+function PublicLocationHours({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  const workingHours =
+    card.businessDetails?.workingHours;
+
+  const from =
+    workingHours?.weekday?.from ||
+    "09:00 AM";
+
+  const to =
+    workingHours?.weekday?.to ||
+    "07:00 PM";
+
+  return (
+    <div
+      className="
+        mt-[8px]
+        overflow-hidden
+        rounded-[8px]
+        text-white
+      "
+      style={{
+        background: "#063b88",
+      }}
+    >
+      <div className="grid grid-cols-2">
+
+        {/* LOCATION */}
+
+        <a
+          href={
+            card.googleMapLink ||
+            undefined
+          }
+          target={
+            card.googleMapLink
+              ? "_blank"
+              : undefined
+          }
+          rel={
+            card.googleMapLink
+              ? "noopener noreferrer"
+              : undefined
+          }
+          className="
+            flex
+            min-h-[48px]
+            items-center
+            gap-[7px]
+            border-r
+            border-white/10
+            px-[10px]
+          "
+        >
+          <div className="flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-full bg-white/10">
+            <MapPin size={14} />
+          </div>
+
+          <div className="min-w-0">
+            <p className="truncate text-[9px] font-semibold">
+              {card.address || "Add your location"}
+            </p>
+
+            <p className="mt-[1px] text-[7px] text-white/70">
+              View on Map
+            </p>
+          </div>
+        </a>
+
+        {/* HOURS */}
+
+        <div className="flex min-h-[48px] items-center gap-[7px] px-[10px]">
+          <div className="flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-full bg-white/10">
+            <Clock3 size={14} />
+          </div>
+
+          <div>
+            <p className="text-[9px] font-semibold">
+              Mon - Sat
+            </p>
+
+            <p className="mt-[1px] text-[7px] text-white/70">
+              {from} - {to}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   ABOUT
+========================================================= */
+
+function PublicAbout({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  if (!card.aboutCompany?.trim()) {
+    return null;
+  }
+
+  return (
+    <section className="mt-[13px]">
+
+      <PublicSectionTitle
+        icon="♙"
+        title="About Me"
+        accent={accent}
+      />
+
+      <p
+        className="
+          mt-[5px]
+          line-clamp-3
+          text-[9px]
+          leading-[14px]
+          text-[#4b5563]
+        "
+      >
+        {card.aboutCompany}
+      </p>
+
+      <div className="mt-[5px] flex justify-end">
+        <button
+          type="button"
+          className="
+            rounded-[5px]
+            px-[9px]
+            py-[5px]
+            text-[8px]
+            font-semibold
+            text-white
+          "
+          style={{
+            backgroundColor: accent,
+          }}
+        >
+          Read More
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SERVICES
+========================================================= */
+
+function PublicServices({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  const services =
+    card.businessDetails?.services || [];
+
+  if (!services.length) {
+    return null;
+  }
+
+  return (
+    <section className="mt-[13px]">
+
+      <div className="flex items-center justify-between">
+
+        <PublicSectionTitle
+          icon="▣"
+          title="Our Services"
+          accent={accent}
+        />
+
+        <button
+          type="button"
+          className="flex items-center gap-[2px] text-[8px] font-semibold"
+          style={{
+            color: accent,
+          }}
+        >
+          View All
+          <span className="text-[12px]">→</span>
+        </button>
+      </div>
+
+      <div className="mt-[6px] grid grid-cols-5 gap-[4px]">
+        {services.slice(0, 5).map(
+          (service, index) => (
+            <div
+              key={`${service}-${index}`}
+              className="
+                flex
+                min-h-[65px]
+                flex-col
+                items-center
+                justify-center
+                rounded-[7px]
+                border
+                border-[#e5e7eb]
+                bg-white
+                px-[3px]
+                py-[5px]
+                text-center
+                shadow-[0_2px_6px_rgba(0,0,0,0.05)]
+              "
+            >
+              <div
+                className="mb-[3px]"
+                style={{
+                  color: accent,
+                }}
+              >
+                <Globe size={14} />
+              </div>
+
+              <p className="line-clamp-2 text-[7px] font-medium leading-[10px] text-[#374151]">
+                {service || "Service"}
+              </p>
+            </div>
+          ),
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SOCIAL LINKS
+========================================================= */
+
+function PublicSocialLinks({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  const social = card.socialLinks || {};
+
+  const items = [
+    {
+      value: social.facebook,
+      label: "Facebook",
+      content: "f",
+      className: "bg-[#1877F2]",
+    },
+    {
+      value: social.instagram,
+      label: "Instagram",
+      content: "◎",
+      className:
+        "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#FCAF45]",
+    },
+    {
+      value: social.linkedin,
+      label: "LinkedIn",
+      content: "in",
+      className: "bg-[#0A66C2]",
+    },
+    {
+      value: social.youtube,
+      label: "YouTube",
+      content: "▶",
+      className: "bg-[#FF0000]",
+    },
+    {
+      value: social.twitter,
+      label: "X",
+      content: "𝕏",
+      className: "bg-black",
+    },
+    {
+      value: social.telegram,
+      label: "Telegram",
+      content: "➤",
+      className: "bg-[#229ED9]",
+    },
+  ].filter((item) => item.value?.trim());
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <section className="mt-[13px]">
+
+      <PublicSectionTitle
+        icon="⌘"
+        title="Connect With Me"
+        accent={accent}
+      />
+
+      <div className="mt-[7px] flex flex-wrap items-center gap-[11px]">
+        {items.map((item) => (
+          <a
+            key={item.label}
+            href={normalizeUrl(item.value)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={item.label}
+            className={`
+              flex
+              h-[28px]
+              w-[28px]
+              items-center
+              justify-center
+              rounded-full
+              ${item.className}
+              text-[14px]
+              font-bold
+              text-white
+              shadow-sm
+              transition
+              hover:scale-110
+            `}
+          >
+            {item.content}
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   GALLERY
+========================================================= */
+
+function PublicGallery({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  const gallery =
+    (card.gallery || []) as PublicGalleryItem[];
+
+  if (!gallery.length) {
+    return null;
+  }
+
+  return (
+    <section className="mt-[13px]">
+
+      <div className="flex items-center justify-between">
+
+        <PublicSectionTitle
+          icon="▧"
+          title="Gallery"
+          accent={accent}
+        />
+
+        <button
+          type="button"
+          className="text-[8px] font-semibold"
+          style={{
+            color: accent,
+          }}
+        >
+          View All →
+        </button>
+      </div>
+
+      <div className="mt-[6px] grid grid-cols-4 gap-[4px]">
+        {gallery.slice(0, 4).map(
+          (image, index) => (
+            <div
+              key={`${image.url}-${index}`}
+              className="
+                h-[52px]
+                overflow-hidden
+                rounded-[6px]
+                bg-[#f3f4f6]
+              "
+            >
+              {image.url ? (
+                <img
+                  src={image.url}
+                  alt={
+                    image.title ||
+                    `Gallery ${index + 1}`
+                  }
+                  className="
+                    h-full
+                    w-full
+                    object-cover
+                    transition
+                    duration-200
+                    hover:scale-105
+                  "
+                />
+              ) : null}
+            </div>
+          ),
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   VIDEOS
+========================================================= */
+
+function PublicVideos({
+  card,
+  accent,
+}: {
+  card: DigitalCardData;
+  accent: string;
+}) {
+  const extraCard =
+    card as DigitalCardData & PublicCardExtraData;
+
+  const videos =
+    extraCard.videos ||
+    extraCard.businessDetails?.videos ||
+    [];
+
+  if (!videos.length) {
+    return null;
+  }
+
+  return (
+    <section className="mt-[13px]">
+
+      <div className="flex items-center justify-between">
+
+        <PublicSectionTitle
+          icon="▣"
+          title="Videos"
+          accent={accent}
+        />
+
+        <button
+          type="button"
+          className="text-[8px] font-semibold"
+          style={{
+            color: accent,
+          }}
+        >
+          View All →
+        </button>
+      </div>
+
+      <div className="mt-[6px] grid grid-cols-3 gap-[5px]">
+        {videos.slice(0, 3).map(
+          (video, index) => (
+            <a
+              key={`${video.url}-${index}`}
+              href={video.url || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                relative
+                h-[70px]
+                overflow-hidden
+                rounded-[7px]
+                bg-[#063b88]
+              "
+            >
+              {video.thumbnail ? (
+                <img
+                  src={video.thumbnail}
+                  alt={
+                    video.title ||
+                    `Video ${index + 1}`
+                  }
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent}, #063b88)`,
+                  }}
+                />
+              )}
+
+              <div className="absolute inset-0 bg-black/20" />
+
+              <div className="absolute left-[5px] bottom-[5px] right-[5px]">
+                <p className="line-clamp-2 text-[7px] font-semibold text-white">
+                  {video.title ||
+                    `Video ${index + 1}`}
+                </p>
+              </div>
+
+              <div className="absolute right-[5px] top-[5px] flex h-[21px] w-[21px] items-center justify-center rounded-full bg-black/50 text-[8px] text-white">
+                ▶
+              </div>
+
+              {video.duration && (
+                <span className="absolute bottom-[5px] right-[5px] rounded bg-black/60 px-[3px] py-[1px] text-[6px] text-white">
+                  {video.duration}
+                </span>
+              )}
+            </a>
+          ),
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+function PublicSectionTitle({
+  icon,
+  title,
+  accent,
+}: {
+  icon: string;
+  title: string;
+  accent: string;
+}) {
+  return (
+    <div className="flex items-center gap-[5px]">
+      <span
+        className="text-[12px] font-bold"
+        style={{
+          color: accent,
+        }}
+      >
+        {icon}
+      </span>
+
+      <h2
+        className="text-[10px] font-bold"
+        style={{
+          color: accent,
+        }}
+      >
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/* =========================================================
+   SAVE TO CONTACTS
+========================================================= */
+
+function PublicSaveContact({
+  card,
+  templateData,
+}: {
+  card: DigitalCardData;
+  templateData: ReturnType<typeof getTemplateData>;
+}) {
+  return (
+    <div
+      className="
+        absolute
+        bottom-0
+        left-0
+        right-0
+        z-30
+        bg-white
+        px-[14px]
+        pb-[12px]
+        pt-[8px]
+      "
+    >
+      <button
+        type="button"
+        onClick={() => downloadVCard(card)}
+        className="
+          flex
+          h-[38px]
+          w-full
+          items-center
+          justify-center
+          gap-[5px]
+          rounded-[7px]
+          text-[10px]
+          font-semibold
+          text-white
+          shadow-sm
+        "
+        style={{
+          background:
+            templateData.background,
+        }}
+      >
+        <span className="text-[12px]">
+          ↓
+        </span>
+
+        Save to Contacts
+      </button>
+    </div>
+  );
+}
+
+/* =========================================================
+   URL HELPER
+========================================================= */
+
+function normalizeUrl(
+  url?: string,
+) {
+  if (!url?.trim()) {
+    return undefined;
+  }
+
+  const value = url.trim();
+
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    return value;
+  }
+
+  return `https://${value}`;
+}
+
+/* =========================================================
+   WHATSAPP HELPER
+========================================================= */
+
+function getWhatsappUrl(
+  number?: string,
+) {
+  if (!number?.trim()) {
+    return undefined;
+  }
+
+  const cleanNumber =
+    number.replace(/\D/g, "");
+
+  if (!cleanNumber) {
+    return undefined;
+  }
+
+  let finalNumber = cleanNumber;
+
+  /*
+   * India number support.
+   * If already contains country code,
+   * it will not be changed.
+   */
+
+  if (
+    finalNumber.length === 10
+  ) {
+    finalNumber = `91${finalNumber}`;
+  }
+
+  return `https://wa.me/${finalNumber}`;
+}
+
+/* =========================================================
+   DOWNLOAD VCARD
+========================================================= */
+
+function downloadVCard(
+  card: DigitalCardData,
+) {
+  const name =
+    card.fullName ||
+    card.companyName ||
+    "Digital Contact";
+
+  const lines = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${escapeVCard(name)}`,
+  ];
+
+  if (card.companyName) {
+    lines.push(
+      `ORG:${escapeVCard(card.companyName)}`,
+    );
+  }
+
+  if (card.designation) {
+    lines.push(
+      `TITLE:${escapeVCard(card.designation)}`,
+    );
+  }
+
+  if (card.mobile) {
+    lines.push(
+      `TEL;TYPE=CELL:${escapeVCard(card.mobile)}`,
+    );
+  }
+
+  if (card.email) {
+    lines.push(
+      `EMAIL:${escapeVCard(card.email)}`,
+    );
+  }
+
+  if (card.website) {
+    lines.push(
+      `URL:${escapeVCard(card.website)}`,
+    );
+  }
+
+  if (card.address) {
+    lines.push(
+      `ADR;TYPE=WORK:;;${escapeVCard(card.address)}`,
+    );
+  }
+
+  lines.push("END:VCARD");
+
+  const blob = new Blob(
+    [lines.join("\r\n")],
+    {
+      type: "text/vcard;charset=utf-8",
+    },
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download =
+    `${name.replace(
+      /[^a-z0-9]/gi,
+      "_",
+    )}.vcf`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+/* =========================================================
+   VCARD ESCAPE
+========================================================= */
+
+function escapeVCard(
+  value: string,
+) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
+}
 
 /* =========================================================
    PROFILE HEADER

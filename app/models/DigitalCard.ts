@@ -29,14 +29,30 @@ export interface ICertificateItem {
 }
 
 /* =====================================
+   PAYMENT TYPES
+===================================== */
+
+export type PaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed";
+
+/* =====================================
    DIGITAL CARD
 ===================================== */
 
-export interface IDigitalCard
-  extends Document {
-  userId?: string;
+export interface IDigitalCard extends Document {
+  userId?: string | null;
 
-  /* BASIC DETAILS */
+  /* =====================================
+     USERNAME / PUBLIC URL
+  ====================================== */
+
+  username?: string;
+
+  /* =====================================
+     BASIC DETAILS
+  ====================================== */
 
   fullName: string;
   companyName: string;
@@ -47,7 +63,9 @@ export interface IDigitalCard
   tagline: string;
   aboutCompany: string;
 
-  /* CONTACT DETAILS */
+  /* =====================================
+     CONTACT DETAILS
+  ====================================== */
 
   mobile: string;
   whatsapp: string;
@@ -56,7 +74,9 @@ export interface IDigitalCard
   address: string;
   googleMapLink: string;
 
-  /* BUSINESS DETAILS */
+  /* =====================================
+     BUSINESS DETAILS
+  ====================================== */
 
   businessDetails: {
     businessName: string;
@@ -82,7 +102,9 @@ export interface IDigitalCard
     };
   };
 
-  /* SOCIAL LINKS */
+  /* =====================================
+     SOCIAL LINKS
+  ====================================== */
 
   socialLinks: {
     facebook: string;
@@ -112,9 +134,27 @@ export interface IDigitalCard
 
   certificates: ICertificateItem[];
 
-  /* CARD DESIGN */
+  /* =====================================
+     CARD DESIGN
+  ====================================== */
 
   backgroundColor: string;
+
+  /* =====================================
+     PAYMENT
+  ====================================== */
+
+  paymentStatus: PaymentStatus;
+
+  paymentId: string | null;
+
+  paidAt: Date | null;
+
+  /* =====================================
+     PUBLICATION
+  ====================================== */
+
+  isPublished: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -225,9 +265,39 @@ const CertificateItemSchema =
 const DigitalCardSchema =
   new Schema<IDigitalCard>(
     {
+      /* =====================================
+         USER
+      ====================================== */
+
       userId: {
         type: String,
         default: null,
+        index: true,
+      },
+
+      /* =====================================
+         USERNAME / PUBLIC CARD URL
+         
+         Example:
+         /digitalvisitingcard/pruyymn
+      ====================================== */
+
+      username: {
+        type: String,
+         required: [true, "Username is required"],
+
+
+        unique: true,
+        sparse: true,
+
+        lowercase: true,
+        trim: true,
+
+        minlength: 3,
+        maxlength: 30,
+
+        match: /^[a-z0-9_-]{3,30}$/,
+
         index: true,
       },
 
@@ -438,7 +508,7 @@ const DigitalCardSchema =
       },
 
       /* =====================================
-         ACHIEVEMENTS / CERTIFICATES
+         CERTIFICATES
       ====================================== */
 
       certificates: {
@@ -453,6 +523,55 @@ const DigitalCardSchema =
       backgroundColor: {
         type: String,
         default: "#17142E",
+      },
+
+      /* =====================================
+         PAYMENT STATUS
+         
+         pending = created but not paid
+         paid    = payment verified
+         failed  = payment failed
+      ====================================== */
+
+      paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed"],
+        default: "pending",
+        index: true,
+      },
+
+      /* =====================================
+         PAYMENT ID
+         
+         Example:
+         Razorpay payment ID
+      ====================================== */
+
+      paymentId: {
+        type: String,
+        default: null,
+      },
+
+      /* =====================================
+         PAYMENT DATE
+      ====================================== */
+
+      paidAt: {
+        type: Date,
+        default: null,
+      },
+
+      /* =====================================
+         PUBLIC CARD STATUS
+         
+         false = card is not publicly accessible
+         true  = card can be accessed using username
+      ====================================== */
+
+      isPublished: {
+        type: Boolean,
+        default: false,
+        index: true,
       },
     },
 

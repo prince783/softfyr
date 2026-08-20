@@ -11,21 +11,26 @@ import {
   LockKeyhole,
   Check,
   X,
-  ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
+
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import { useDigitalCard } from "../DigitalCardEditor";
 
 export default function ActionSettings() {
   const { card, updateCard } = useDigitalCard();
 
-  /*
-   * Extra Action Settings fields.
-   * This allows the component to work even if these fields
-   * are not yet added to your existing DigitalCardData type.
-   */
+  /* =====================================================
+     EXTRA ACTION SETTINGS
+  ===================================================== */
+
   const settings = card as typeof card & {
+    _id?: string;
+    id?: string;
+
     showCall?: boolean;
     showWhatsapp?: boolean;
     showEmail?: boolean;
@@ -36,6 +41,9 @@ export default function ActionSettings() {
     customButtonLabel?: string;
     customButtonLink?: string;
 
+    username?: string;
+
+    /* OLD CARD LINK - kept for compatibility */
     cardLink?: string;
 
     seoVisible?: boolean;
@@ -44,9 +52,43 @@ export default function ActionSettings() {
     cardPassword?: string;
   };
 
-  /*
-   * Update additional Action Settings fields.
-   */
+  /* =====================================================
+     CURRENT CARD ID
+  ===================================================== */
+
+  const currentCardId =
+    settings._id ||
+    settings.id ||
+    "";
+
+  /* =====================================================
+     USERNAME STATE
+  ===================================================== */
+
+  const [username, setUsername] =
+    useState<string>(
+      settings.username ?? ""
+    );
+
+  const [usernameStatus, setUsernameStatus] =
+    useState<
+      | "idle"
+      | "checking"
+      | "available"
+      | "taken"
+      | "invalid"
+    >("idle");
+
+  const [usernameMessage, setUsernameMessage] =
+    useState("");
+
+  const [copied, setCopied] =
+    useState(false);
+
+  /* =====================================================
+     UPDATE ADDITIONAL SETTINGS
+  ===================================================== */
+
   const setSetting = (
     key: string,
     value: unknown
@@ -57,6 +99,332 @@ export default function ActionSettings() {
         value: unknown
       ) => void
     )(key, value);
+  };
+
+  /* =====================================================
+     NORMALIZE USERNAME
+  ===================================================== */
+
+  const normalizeUsername = (
+    value: string
+  ) => {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/[^a-z0-9_-]/g, "")
+      .slice(0, 30);
+  };
+
+  /* =====================================================
+     SYNC USERNAME WHEN CARD LOADS
+  ===================================================== */
+
+  useEffect(() => {
+    const cardUsername =
+      settings.username ?? "";
+
+    setUsername(cardUsername);
+  }, [settings.username]);
+
+  /* =====================================================
+     PUBLIC CARD URL
+  ===================================================== */
+
+  const getPublicCardUrl = (
+    value: string
+  ) => {
+    if (!value) {
+      return "";
+    }
+
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000";
+
+    return `${origin}/digitalvisitingcard/${value}`;
+  };
+
+  const cardUrl =
+    getPublicCardUrl(username);
+
+  /* =====================================================
+     USERNAME CHECK
+  ===================================================== */
+
+  useEffect(() => {
+    const cleanUsername =
+      normalizeUsername(username);
+
+    /* ===================================================
+       EMPTY
+    =================================================== */
+
+    if (!cleanUsername) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+      return;
+    }
+
+    /* ===================================================
+       INVALID LENGTH
+    =================================================== */
+
+    if (
+      cleanUsername.length < 3 ||
+      cleanUsername.length > 30
+    ) {
+      setUsernameStatus("invalid");
+      setUsernameMessage(
+        "Username must be 3-30 characters."
+      );
+      return;
+    }
+
+    /* ===================================================
+       INVALID CHARACTERS
+    =================================================== */
+
+    if (
+      !/^[a-z0-9_-]{3,30}$/.test(
+        cleanUsername
+      )
+    ) {
+      setUsernameStatus("invalid");
+      setUsernameMessage(
+        "Only letters, numbers, hyphens and underscores are allowed."
+      );
+      return;
+    }
+
+    /* ===================================================
+       START CHECKING
+    =================================================== */
+
+    setUsernameStatus("checking");
+    setUsernameMessage(
+      "Checking username..."
+    );
+
+    const controller =
+      new AbortController();
+
+    const timeout = setTimeout(
+      async () => {
+        try {
+          /* =================================================
+             BUILD API URL
+          ================================================= */
+
+          const params =
+            new URLSearchParams();
+
+          params.set(
+            "username",
+            cleanUsername
+          );
+
+          /*
+           * IMPORTANT:
+           * Send current card ID when editing.
+           *
+           * This allows backend to exclude the
+           * current card from duplicate checking.
+           */
+
+          if (currentCardId) {
+            params.set(
+              "cardId",
+              currentCardId
+            );
+          }
+
+          const response =
+            await fetch(
+              `/api/digital-cards/check-username?${params.toString()}`,
+              {
+                method: "GET",
+                signal:
+                  controller.signal,
+                cache: "no-store",
+              }
+            );
+
+          const data =
+            await response.json();
+
+          /* =================================================
+             API ERROR
+          ================================================= */
+
+          if (!response.ok) {
+            setUsernameStatus(
+              "invalid"
+            );
+
+            setUsernameMessage(
+              data?.message ||
+                "Unable to check username."
+            );
+
+            return;
+          }
+
+          /* =================================================
+             USERNAME AVAILABLE
+          ================================================= */
+
+          if (data?.available === true) {
+            setUsernameStatus(
+              "available"
+            );
+
+            setUsernameMessage(
+              "Username is available"
+            );
+
+            return;
+          }
+
+          /* =================================================
+             USERNAME TAKEN
+          ================================================= */
+
+          setUsernameStatus("taken");
+
+          setUsernameMessage(
+            data?.message ||
+              "Username is already taken"
+          );
+        } catch (error) {
+          /* ===============================================
+             ABORTED REQUEST
+          =============================================== */
+
+          if (
+            error instanceof DOMException &&
+            error.name === "AbortError"
+          ) {
+            return;
+          }
+
+          console.error(
+            "Username check error:",
+            error
+          );
+
+          setUsernameStatus(
+            "invalid"
+          );
+
+          setUsernameMessage(
+            "Unable to check username."
+          );
+        }
+      },
+      500
+    );
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [
+    username,
+    currentCardId,
+  ]);
+
+  /* =====================================================
+     USERNAME CHANGE
+  ===================================================== */
+
+  const handleUsernameChange = (
+    value: string
+  ) => {
+    const cleanUsername =
+      normalizeUsername(value);
+
+    setUsername(cleanUsername);
+
+    /*
+     * Immediately reset status.
+     *
+     * This prevents the previous
+     * "available" / "taken" status
+     * from showing for the new username.
+     */
+
+    if (!cleanUsername) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+    } else {
+      setUsernameStatus("checking");
+      setUsernameMessage(
+        "Checking username..."
+      );
+    }
+
+    /* ===================================================
+       SAVE USERNAME INTO EDITOR
+    =================================================== */
+
+    setSetting(
+      "username",
+      cleanUsername
+    );
+
+    /* ===================================================
+       KEEP OLD CARD LINK
+       FOR BACKWARD COMPATIBILITY
+    =================================================== */
+
+    if (cleanUsername) {
+      setSetting(
+        "cardLink",
+        getPublicCardUrl(
+          cleanUsername
+        )
+      );
+    } else {
+      setSetting(
+        "cardLink",
+        ""
+      );
+    }
+
+    setCopied(false);
+  };
+
+  /* =====================================================
+     COPY URL
+  ===================================================== */
+
+  const handleCopyUrl = async () => {
+    if (!cardUrl) {
+      return;
+    }
+
+    if (
+      typeof navigator ===
+        "undefined" ||
+      !navigator.clipboard
+    ) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        cardUrl
+      );
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 1500);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
@@ -71,8 +439,8 @@ export default function ActionSettings() {
         </h1>
 
         <p className="mt-[4px] text-[9px] leading-[14px] text-[#858585]">
-          Choose the actions you want to show and how people
-          can connect with you.
+          Choose the actions you want to show and how
+          people can connect with you.
         </p>
       </div>
 
@@ -81,20 +449,17 @@ export default function ActionSettings() {
       {/* ================================================= */}
 
       <div className="mb-[20px]">
-
         <h2 className="text-[10px] font-semibold leading-[14px] text-[#454545]">
           Primary Actions
         </h2>
 
         <p className="mt-[3px] text-[8px] leading-[12px] text-[#999]">
-          Select the main actions to display on your card.
+          Select the main actions to display on your
+          card.
         </p>
 
-<div className="mt-[12px] grid grid-cols-2 gap-x-[12px] gap-y-[12px]">
-          {/* CALL */}
-
+        <div className="mt-[12px] grid grid-cols-2 gap-x-[12px] gap-y-[12px]">
           <ActionToggle
-          
             icon={
               <PhoneCall
                 size={14}
@@ -102,7 +467,9 @@ export default function ActionSettings() {
               />
             }
             label="Call"
-            enabled={settings.showCall ?? true}
+            enabled={
+              settings.showCall ?? true
+            }
             onChange={(value) =>
               setSetting(
                 "showCall",
@@ -110,8 +477,6 @@ export default function ActionSettings() {
               )
             }
           />
-
-          {/* WHATSAPP */}
 
           <ActionToggle
             icon={
@@ -122,7 +487,8 @@ export default function ActionSettings() {
             }
             label="WhatsApp"
             enabled={
-              settings.showWhatsapp ?? true
+              settings.showWhatsapp ??
+              true
             }
             onChange={(value) =>
               setSetting(
@@ -131,8 +497,6 @@ export default function ActionSettings() {
               )
             }
           />
-
-          {/* EMAIL */}
 
           <ActionToggle
             icon={
@@ -153,8 +517,6 @@ export default function ActionSettings() {
             }
           />
 
-          {/* WEBSITE */}
-
           <ActionToggle
             icon={
               <Globe2
@@ -164,7 +526,8 @@ export default function ActionSettings() {
             }
             label="Website"
             enabled={
-              settings.showWebsite ?? true
+              settings.showWebsite ??
+              true
             }
             onChange={(value) =>
               setSetting(
@@ -173,8 +536,6 @@ export default function ActionSettings() {
               )
             }
           />
-
-          {/* LOCATION */}
 
           <ActionToggle
             icon={
@@ -185,7 +546,8 @@ export default function ActionSettings() {
             }
             label="Location"
             enabled={
-              settings.showLocation ?? true
+              settings.showLocation ??
+              true
             }
             onChange={(value) =>
               setSetting(
@@ -194,8 +556,6 @@ export default function ActionSettings() {
               )
             }
           />
-
-          {/* CUSTOM BUTTON */}
 
           <ActionToggle
             icon={
@@ -216,7 +576,6 @@ export default function ActionSettings() {
               )
             }
           />
-
         </div>
       </div>
 
@@ -226,7 +585,6 @@ export default function ActionSettings() {
 
       {settings.showCustomButton && (
         <div className="mb-[20px]">
-
           <h2 className="text-[10px] font-semibold leading-[14px] text-[#454545]">
             Custom Button{" "}
             <span className="font-normal text-[#999]">
@@ -235,11 +593,11 @@ export default function ActionSettings() {
           </h2>
 
           <p className="mt-[3px] text-[8px] leading-[12px] text-[#999]">
-            Add a custom button with your own label and link.
+            Add a custom button with your own label
+            and link.
           </p>
 
           <div className="mt-[12px] space-y-[13px]">
-
             <SmallInput
               label="Button Label"
               placeholder="e.g. Book Appointment"
@@ -270,7 +628,6 @@ export default function ActionSettings() {
                 )
               }
             />
-
           </div>
         </div>
       )}
@@ -280,69 +637,242 @@ export default function ActionSettings() {
       {/* ================================================= */}
 
       <div className="mb-[20px]">
-
         <h2 className="text-[10px] font-semibold leading-[14px] text-[#454545]">
           Card Settings
         </h2>
 
         <p className="mt-[3px] text-[8px] leading-[12px] text-[#999]">
-          Configure your card link and visibility settings.
+          Configure your username and visibility
+          settings.
         </p>
 
-        <div className="mt-[12px]">
+        {/* =================================================
+            USERNAME
+        ================================================= */}
 
+        <div className="mt-[12px]">
           <label
-            htmlFor="cardLink"
+            htmlFor="username"
             className="block text-[8px] font-medium leading-[10px] text-[#454545]"
           >
-            Your Card Link
+            Choose Your Username
           </label>
 
-          <div className="mt-[5px] flex h-[27px] w-full items-center rounded-[5px] border border-[#dedede] bg-white px-[8px]">
+          <p className="mt-[3px] text-[7px] leading-[10px] text-[#999]">
+            Your username will be used to create your
+            digital visiting card URL.
+          </p>
+
+          {/* USERNAME INPUT */}
+
+          <div
+            className={`
+              mt-[7px]
+              flex
+              h-[30px]
+              w-full
+              items-center
+              overflow-hidden
+              rounded-[5px]
+              border
+              bg-white
+              transition
+              ${
+                usernameStatus ===
+                "taken"
+                  ? "border-[#ef4444]"
+                  : usernameStatus ===
+                    "available"
+                  ? "border-[#22c55e]"
+                  : usernameStatus ===
+                    "invalid"
+                  ? "border-[#ef4444]"
+                  : "border-[#dedede]"
+              }
+            `}
+          >
+            {/* FIXED PREFIX */}
+
+            <div className="flex h-full shrink-0 items-center border-r border-[#eeeeee] bg-[#fafafa] px-[7px]">
+              <span className="text-[7px] font-medium text-[#777]">
+                /digitalvisitingcard/
+              </span>
+            </div>
+
+            {/* USERNAME */}
 
             <input
-              id="cardLink"
+              id="username"
               type="text"
-              value={
-                settings.cardLink ?? ""
-              }
+              value={username}
               onChange={(e) =>
-                setSetting(
-                  "cardLink",
+                handleUsernameChange(
                   e.target.value
                 )
               }
-              placeholder="https://miniw.../yourname"
-              className="min-w-0 flex-1 bg-transparent text-[8px] text-[#454545] outline-none placeholder:text-[#a1a1a1]"
+              placeholder="yourname"
+              autoComplete="off"
+              spellCheck={false}
+              className="
+                min-w-0
+                flex-1
+                bg-transparent
+                px-[7px]
+                text-[8px]
+                text-[#333]
+                outline-none
+                placeholder:text-[#aaa]
+              "
             />
 
-            <button
-              type="button"
-              onClick={() => {
-                if (
-                  settings.cardLink &&
-                  typeof navigator !==
-                    "undefined" &&
-                  navigator.clipboard
-                ) {
-                  navigator.clipboard
-                    .writeText(
-                      settings.cardLink
-                    )
-                    .catch(() => {});
-                }
-              }}
-              className="ml-[5px] flex shrink-0 items-center gap-[4px] rounded-[4px] px-[5px] py-[3px] text-[7px] font-medium text-[#6335e9] transition hover:bg-[#faf8ff]"
-            >
-              <Copy
-                size={10}
-                strokeWidth={2}
-              />
+            {/* STATUS ICON */}
 
-              Copy
-            </button>
+            <div className="mr-[7px] flex shrink-0 items-center">
+              {usernameStatus ===
+                "checking" && (
+                <span className="h-[11px] w-[11px] animate-spin rounded-full border-2 border-[#d9d9d9] border-t-[#6335e9]" />
+              )}
 
+              {usernameStatus ===
+                "available" && (
+                <div className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#22c55e]">
+                  <Check
+                    size={9}
+                    strokeWidth={3}
+                    className="text-white"
+                  />
+                </div>
+              )}
+
+              {usernameStatus ===
+                "taken" && (
+                <div className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#ef4444]">
+                  <X
+                    size={9}
+                    strokeWidth={3}
+                    className="text-white"
+                  />
+                </div>
+              )}
+
+              {usernameStatus ===
+                "invalid" && (
+                <div className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#ef4444]">
+                  <X
+                    size={9}
+                    strokeWidth={3}
+                    className="text-white"
+                  />
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* USERNAME STATUS */}
+
+          {usernameMessage && (
+            <p
+              className={`
+                mt-[4px]
+                text-[7px]
+                leading-[10px]
+                ${
+                  usernameStatus ===
+                  "available"
+                    ? "text-[#22a447]"
+                    : usernameStatus ===
+                        "checking"
+                    ? "text-[#999]"
+                    : "text-[#ef4444]"
+                }
+              `}
+            >
+              {usernameStatus ===
+                "available" && "✓ "}
+
+              {usernameStatus ===
+                "taken" && "✕ "}
+
+              {usernameStatus ===
+                "invalid" && "✕ "}
+
+              {usernameMessage}
+            </p>
+          )}
+
+          {/* =================================================
+              GENERATED CARD URL
+          ================================================= */}
+
+          {username &&
+            usernameStatus ===
+              "available" && (
+              <div className="mt-[9px]">
+                <label className="block text-[8px] font-medium leading-[10px] text-[#454545]">
+                  Your Card URL
+                </label>
+
+                <div className="mt-[5px] flex h-[27px] w-full items-center rounded-[5px] border border-[#dedede] bg-[#fafafa] px-[8px]">
+                  <span className="min-w-0 flex-1 truncate text-[7px] text-[#6335e9]">
+                    {cardUrl}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleCopyUrl
+                    }
+                    className="
+                      ml-[5px]
+                      flex
+                      shrink-0
+                      items-center
+                      gap-[4px]
+                      rounded-[4px]
+                      px-[5px]
+                      py-[3px]
+                      text-[7px]
+                      font-medium
+                      text-[#6335e9]
+                      transition
+                      hover:bg-[#f1edff]
+                    "
+                  >
+                    {copied ? (
+                      <>
+                        <Check
+                          size={10}
+                          strokeWidth={2.5}
+                        />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy
+                          size={10}
+                          strokeWidth={2}
+                        />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+          {/* =================================================
+              TAKEN MESSAGE
+          ================================================= */}
+
+          {usernameStatus ===
+            "taken" && (
+            <div className="mt-[8px] rounded-[5px] border border-[#fee2e2] bg-[#fff7f7] px-[8px] py-[6px]">
+              <p className="text-[7px] leading-[10px] text-[#dc2626]">
+                This username is already being used.
+                Please choose another username.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -351,20 +881,20 @@ export default function ActionSettings() {
       {/* ================================================= */}
 
       <div className="mb-[20px]">
-
         <h2 className="text-[10px] font-semibold leading-[14px] text-[#454545]">
           SEO / Search Engine Visibility
         </h2>
 
         <p className="mt-[3px] text-[8px] leading-[12px] text-[#999]">
-          Do you want your card to be visible on search engines?
+          Do you want your card to be visible on search
+          engines?
         </p>
 
         <div className="mt-[12px] flex gap-[25px]">
-
           <RadioOption
             selected={
-              settings.seoVisible !== false
+              settings.seoVisible !==
+              false
             }
             onClick={() =>
               setSetting(
@@ -378,7 +908,8 @@ export default function ActionSettings() {
 
           <RadioOption
             selected={
-              settings.seoVisible === false
+              settings.seoVisible ===
+              false
             }
             onClick={() =>
               setSetting(
@@ -389,7 +920,6 @@ export default function ActionSettings() {
             title="No, keep it private"
             subtitle="Only shareable via link"
           />
-
         </div>
       </div>
 
@@ -398,7 +928,6 @@ export default function ActionSettings() {
       {/* ================================================= */}
 
       <div className="mb-[20px]">
-
         <h2 className="text-[10px] font-semibold leading-[14px] text-[#454545]">
           Password Protection{" "}
           <span className="font-normal text-[#999]">
@@ -407,11 +936,11 @@ export default function ActionSettings() {
         </h2>
 
         <p className="mt-[3px] text-[8px] leading-[12px] text-[#999]">
-          Do you want to protect your card with a password?
+          Do you want to protect your card with a
+          password?
         </p>
 
         <div className="mt-[12px]">
-
           <ActionToggle
             icon={
               <LockKeyhole
@@ -431,18 +960,17 @@ export default function ActionSettings() {
               )
             }
           />
-
         </div>
 
         {settings.passwordProtection && (
           <div className="mt-[13px]">
-
             <SmallInput
               label="Card Password"
               type="password"
               placeholder="Enter password"
               value={
-                settings.cardPassword ?? ""
+                settings.cardPassword ??
+                ""
               }
               onChange={(value) =>
                 setSetting(
@@ -451,10 +979,8 @@ export default function ActionSettings() {
                 )
               }
             />
-
           </div>
         )}
-
       </div>
 
       {/* ================================================= */}
@@ -462,9 +988,7 @@ export default function ActionSettings() {
       {/* ================================================= */}
 
       <div className="mt-[18px] rounded-[5px] border border-dashed border-[#ded6ff] bg-[#faf8ff] px-[9px] py-[8px]">
-
         <div className="flex items-start gap-[7px]">
-
           <LockKeyhole
             size={12}
             strokeWidth={2.5}
@@ -472,59 +996,26 @@ export default function ActionSettings() {
           />
 
           <div>
-
             <p className="text-[8px] font-medium leading-[11px] text-[#666]">
-              Configure the actions shown on your card.
+              Configure the actions shown on your
+              card.
             </p>
 
             <p className="mt-[2px] text-[7px] leading-[10px] text-[#999]">
-              Only enabled actions will be visible to visitors.
+              Only enabled actions will be visible to
+              visitors.
             </p>
-
           </div>
-
         </div>
       </div>
-
-      {/* ================================================= */}
-      {/* NAVIGATION BUTTONS */}
-      {/* ================================================= */}
-
-      {/* <div className="mt-[20px] flex items-center justify-between border-t border-[#eeeeee] pt-[15px]">
-
-        <button
-          type="button"
-          className="flex h-[29px] items-center gap-[5px] rounded-[5px] border border-[#dedede] bg-white px-[10px] text-[8px] font-medium text-[#555] transition hover:bg-[#fafafa]"
-        >
-          <ArrowLeft
-            size={11}
-            strokeWidth={2}
-          />
-
-          Previous
-        </button>
-
-        <button
-          type="button"
-          className="flex h-[29px] items-center gap-[5px] rounded-[5px] bg-[#6335e9] px-[12px] text-[8px] font-medium text-white transition hover:bg-[#5427d5]"
-        >
-          Save & Next
-
-          <ArrowRight
-            size={11}
-            strokeWidth={2}
-          />
-        </button>
-
-      </div> */}
     </div>
   );
 }
 
 /* ========================================================= */
 /* ACTION TOGGLE */
-/* Same toggle style as your SocialLink component */
 /* ========================================================= */
+
 function ActionToggle({
   icon,
   label,
@@ -551,10 +1042,7 @@ function ActionToggle({
         px-[10px]
       "
     >
-      {/* LEFT SIDE */}
       <div className="flex items-center gap-[10px]">
-
-        {/* ICON */}
         <div
           className={`
             flex
@@ -573,17 +1061,16 @@ function ActionToggle({
           {icon}
         </div>
 
-        {/* LABEL */}
         <span className="text-[9px] font-medium text-[#454545]">
           {label}
         </span>
-
       </div>
 
-      {/* TOGGLE */}
       <button
         type="button"
-        onClick={() => onChange(!enabled)}
+        onClick={() =>
+          onChange(!enabled)
+        }
         aria-label={`Toggle ${label}`}
         aria-pressed={enabled}
         className={`
@@ -662,7 +1149,6 @@ function SmallInput({
 }) {
   return (
     <div>
-
       <label className="block text-[8px] font-medium leading-[10px] text-[#454545]">
         {label}
       </label>
@@ -693,7 +1179,6 @@ function SmallInput({
           focus:ring-[#6335e9]/10
         "
       />
-
     </div>
   );
 }
@@ -719,9 +1204,6 @@ function RadioOption({
       onClick={onClick}
       className="flex items-start gap-[7px] text-left"
     >
-
-      {/* RADIO */}
-
       <span
         className={`
           mt-[1px]
@@ -740,17 +1222,12 @@ function RadioOption({
           }
         `}
       >
-
         {selected && (
           <span className="h-[6px] w-[6px] rounded-full bg-[#6335e9]" />
         )}
-
       </span>
 
-      {/* TEXT */}
-
       <span>
-
         <span className="block text-[8px] font-medium leading-[10px] text-[#454545]">
           {title}
         </span>
@@ -770,9 +1247,7 @@ function RadioOption({
         >
           {subtitle}
         </span>
-
       </span>
-
     </button>
   );
 }

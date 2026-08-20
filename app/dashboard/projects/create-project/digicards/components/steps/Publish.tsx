@@ -44,7 +44,7 @@ export default function Publish({
 
   const cardLink =
     card.cardLink ||
-    `https://miniweb.in/${
+    `http://localhost:3000/digitalvisitingcard/${
       publishCard.username || "your-card"
     }`;
 

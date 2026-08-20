@@ -70,6 +70,26 @@ const defaultSocialLinks = {
 };
 
 /* =========================================================
+   USERNAME NORMALIZER
+========================================================= */
+
+function normalizeUsername(username: unknown): string {
+  if (typeof username !== "string") {
+    return "";
+  }
+
+  return username.trim().toLowerCase();
+}
+
+/* =========================================================
+   USERNAME VALIDATOR
+========================================================= */
+
+function isValidUsername(username: string): boolean {
+  return /^[a-z0-9_-]{3,30}$/.test(username);
+}
+
+/* =========================================================
    NORMALIZE GALLERY
 ========================================================= */
 
@@ -81,16 +101,24 @@ function normalizeGallery(gallery: unknown): GalleryItem[] {
   return gallery
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) && typeof item === "object" && !Array.isArray(item),
+        Boolean(item) &&
+        typeof item === "object" &&
+        !Array.isArray(item)
     )
     .map((item) => ({
       url: typeof item.url === "string" ? item.url : "",
-
-      publicId: typeof item.publicId === "string" ? item.publicId : "",
-
-      name: typeof item.name === "string" ? item.name : "",
+      publicId:
+        typeof item.publicId === "string"
+          ? item.publicId
+          : "",
+      name:
+        typeof item.name === "string"
+          ? item.name
+          : "",
     }))
-    .filter((item) => item.url.trim().length > 0);
+    .filter(
+      (item) => item.url.trim().length > 0
+    );
 }
 
 /* =========================================================
@@ -105,23 +133,35 @@ function normalizeVideos(videos: unknown): VideoItem[] {
   return videos
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) && typeof item === "object" && !Array.isArray(item),
+        Boolean(item) &&
+        typeof item === "object" &&
+        !Array.isArray(item)
     )
     .map(
       (item): VideoItem => ({
-        url: typeof item.url === "string" ? item.url : "",
+        url:
+          typeof item.url === "string"
+            ? item.url
+            : "",
 
-        platform: item.platform === "vimeo" ? "vimeo" : "youtube",
-      }),
+        platform:
+          item.platform === "vimeo"
+            ? "vimeo"
+            : "youtube",
+      })
     )
-    .filter((item) => item.url.trim().length > 0);
+    .filter(
+      (item) => item.url.trim().length > 0
+    );
 }
 
 /* =========================================================
    NORMALIZE CERTIFICATES
 ========================================================= */
 
-function normalizeCertificates(certificates: unknown): CertificateItem[] {
+function normalizeCertificates(
+  certificates: unknown
+): CertificateItem[] {
   if (!Array.isArray(certificates)) {
     return [];
   }
@@ -129,19 +169,35 @@ function normalizeCertificates(certificates: unknown): CertificateItem[] {
   return certificates
     .filter(
       (item): item is Record<string, unknown> =>
-        Boolean(item) && typeof item === "object" && !Array.isArray(item),
+        Boolean(item) &&
+        typeof item === "object" &&
+        !Array.isArray(item)
     )
     .map((item) => ({
-      url: typeof item.url === "string" ? item.url : "",
+      url:
+        typeof item.url === "string"
+          ? item.url
+          : "",
 
-      publicId: typeof item.publicId === "string" ? item.publicId : "",
+      publicId:
+        typeof item.publicId === "string"
+          ? item.publicId
+          : "",
 
-      name: typeof item.name === "string" ? item.name : "",
+      name:
+        typeof item.name === "string"
+          ? item.name
+          : "",
 
-      size: typeof item.size === "number" ? item.size : 0,
+      size:
+        typeof item.size === "number"
+          ? item.size
+          : 0,
     }))
     .filter(
-      (item) => item.url.trim().length > 0 && item.name.trim().length > 0,
+      (item) =>
+        item.url.trim().length > 0 &&
+        item.name.trim().length > 0
     );
 }
 
@@ -160,13 +216,66 @@ export async function POST(request: NextRequest) {
        VALIDATE BODY
     ===================================================== */
 
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
       return NextResponse.json(
         {
           success: false,
           message: "Invalid request body",
         },
-        { status: 400 },
+        { status: 400 }
+      );
+    }
+
+    /* =====================================================
+       USERNAME
+    ===================================================== */
+
+    const username = normalizeUsername(
+      body.username
+    );
+
+    if (!username) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Username is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUsername(username)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Username must be 3-30 characters and contain only letters, numbers, hyphens or underscores.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /* =====================================================
+       CHECK USERNAME AVAILABILITY
+    ===================================================== */
+
+    const existingCard =
+      await DigitalCard.findOne({
+        username,
+      }).lean();
+
+    if (existingCard) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Username is already taken",
+          field: "username",
+        },
+        { status: 409 }
       );
     }
 
@@ -187,19 +296,24 @@ export async function POST(request: NextRequest) {
         weekday: {
           ...defaultBusinessDetails.workingHours.weekday,
 
-          ...(body.businessDetails?.workingHours?.weekday || {}),
+          ...(body.businessDetails?.workingHours
+            ?.weekday || {}),
         },
 
         weekend: {
           ...defaultBusinessDetails.workingHours.weekend,
 
-          ...(body.businessDetails?.workingHours?.weekend || {}),
+          ...(body.businessDetails?.workingHours
+            ?.weekend || {}),
         },
       },
 
-      services: Array.isArray(body.businessDetails?.services)
+      services: Array.isArray(
+        body.businessDetails?.services
+      )
         ? body.businessDetails.services.filter(
-            (service: unknown) => typeof service === "string",
+            (service: unknown) =>
+              typeof service === "string"
           )
         : [],
     };
@@ -210,7 +324,6 @@ export async function POST(request: NextRequest) {
 
     const socialLinks = {
       ...defaultSocialLinks,
-
       ...(body.socialLinks || {}),
     };
 
@@ -218,19 +331,18 @@ export async function POST(request: NextRequest) {
        GALLERY
     ===================================================== */
 
-    const gallery = normalizeGallery(body.gallery);
-
-    /* =====================================================
-       MAX 12 GALLERY IMAGES
-    ===================================================== */
+    const gallery = normalizeGallery(
+      body.gallery
+    );
 
     if (gallery.length > 12) {
       return NextResponse.json(
         {
           success: false,
-          message: "You can upload up to 12 gallery images",
+          message:
+            "You can upload up to 12 gallery images",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -238,53 +350,103 @@ export async function POST(request: NextRequest) {
        VIDEOS
     ===================================================== */
 
-    const videos = normalizeVideos(body.videos);
+    const videos = normalizeVideos(
+      body.videos
+    );
 
     /* =====================================================
        CERTIFICATES
     ===================================================== */
 
-    const certificates = normalizeCertificates(body.certificates);
+    const certificates =
+      normalizeCertificates(
+        body.certificates
+      );
 
     /* =====================================================
        CREATE DIGITAL CARD
+       
+       IMPORTANT:
+       New card is NOT published.
+       
+       Payment is initially pending.
     ===================================================== */
 
     const card = await DigitalCard.create({
       /* USER */
 
-      userId: typeof body.userId === "string" ? body.userId : null,
+      userId:
+        typeof body.userId === "string"
+          ? body.userId
+          : null,
+
+      /* USERNAME */
+
+      username,
 
       /* BASIC */
 
-      fullName: typeof body.fullName === "string" ? body.fullName : "",
+      fullName:
+        typeof body.fullName === "string"
+          ? body.fullName
+          : "",
 
-      companyName: typeof body.companyName === "string" ? body.companyName : "",
+      companyName:
+        typeof body.companyName === "string"
+          ? body.companyName
+          : "",
 
-      designation: typeof body.designation === "string" ? body.designation : "",
+      designation:
+        typeof body.designation === "string"
+          ? body.designation
+          : "",
 
       profilePhoto:
-        typeof body.profilePhoto === "string" ? body.profilePhoto : "",
+        typeof body.profilePhoto === "string"
+          ? body.profilePhoto
+          : "",
 
-      tagline: typeof body.tagline === "string" ? body.tagline : "",
+      tagline:
+        typeof body.tagline === "string"
+          ? body.tagline
+          : "",
 
       aboutCompany:
-        typeof body.aboutCompany === "string" ? body.aboutCompany : "",
+        typeof body.aboutCompany === "string"
+          ? body.aboutCompany
+          : "",
 
       /* CONTACT */
 
-      mobile: typeof body.mobile === "string" ? body.mobile : "",
+      mobile:
+        typeof body.mobile === "string"
+          ? body.mobile
+          : "",
 
-      whatsapp: typeof body.whatsapp === "string" ? body.whatsapp : "",
+      whatsapp:
+        typeof body.whatsapp === "string"
+          ? body.whatsapp
+          : "",
 
-      email: typeof body.email === "string" ? body.email : "",
+      email:
+        typeof body.email === "string"
+          ? body.email
+          : "",
 
-      website: typeof body.website === "string" ? body.website : "",
+      website:
+        typeof body.website === "string"
+          ? body.website
+          : "",
 
-      address: typeof body.address === "string" ? body.address : "",
+      address:
+        typeof body.address === "string"
+          ? body.address
+          : "",
 
       googleMapLink:
-        typeof body.googleMapLink === "string" ? body.googleMapLink : "",
+        typeof body.googleMapLink === "string"
+          ? body.googleMapLink
+          : "",
 
       /* BUSINESS */
 
@@ -294,30 +456,44 @@ export async function POST(request: NextRequest) {
 
       socialLinks,
 
-      /* =================================================
-           GALLERY
-        ================================================= */
+      /* GALLERY */
 
       gallery,
 
-      /* =================================================
-           VIDEOS
-        ================================================= */
+      /* VIDEOS */
 
       videos,
 
-      /* =================================================
-           CERTIFICATES
-        ================================================= */
+      /* CERTIFICATES */
 
       certificates,
 
       /* DESIGN */
 
       backgroundColor:
-        typeof body.backgroundColor === "string" && body.backgroundColor.trim()
+        typeof body.backgroundColor ===
+          "string" &&
+        body.backgroundColor.trim()
           ? body.backgroundColor
           : "#17142E",
+
+      /* =================================================
+         PAYMENT
+      ================================================= */
+
+      paymentStatus: "pending",
+
+      paymentId: null,
+
+      paidAt: null,
+
+      /* =================================================
+         PUBLICATION
+         
+         FALSE UNTIL PAYMENT IS VERIFIED
+      ================================================= */
+
+      isPublished: false,
     });
 
     /* =====================================================
@@ -327,15 +503,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Digital card created successfully",
+
+        message:
+          "Digital card created successfully",
+
         card,
+
+        publicUrl: `/digitalvisitingcard/${username}`,
+
+        paymentRequired: true,
       },
       {
         status: 201,
-      },
+      }
     );
   } catch (error) {
-    console.error("CREATE DIGITAL CARD ERROR:", error);
+    console.error(
+      "CREATE DIGITAL CARD ERROR:",
+      error
+    );
+
+    /* =====================================================
+       DUPLICATE USERNAME
+    ===================================================== */
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: number }).code === 11000
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Username is already taken",
+          field: "username",
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
       {
@@ -347,7 +553,7 @@ export async function POST(request: NextRequest) {
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }
@@ -357,26 +563,31 @@ export async function POST(request: NextRequest) {
    GET DIGITAL CARDS
 ========================================================= */
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest
+) {
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } =
+      new URL(request.url);
 
-    const userId = searchParams.get("userId");
+    const userId =
+      searchParams.get("userId");
 
     /* =====================================================
        GET USER CARDS
     ===================================================== */
 
     if (userId) {
-      const cards = await DigitalCard.find({
-        userId,
-      })
-        .sort({
-          createdAt: -1,
+      const cards =
+        await DigitalCard.find({
+          userId,
         })
-        .lean();
+          .sort({
+            createdAt: -1,
+          })
+          .lean();
 
       return NextResponse.json({
         success: true,
@@ -388,19 +599,23 @@ export async function GET(request: NextRequest) {
        GET ALL CARDS
     ===================================================== */
 
-    const cards = await DigitalCard.find()
-      .sort({
-        createdAt: -1,
-      })
-      .limit(50)
-      .lean();
+    const cards =
+      await DigitalCard.find()
+        .sort({
+          createdAt: -1,
+        })
+        .limit(50)
+        .lean();
 
     return NextResponse.json({
       success: true,
       cards,
     });
   } catch (error) {
-    console.error("GET DIGITAL CARDS ERROR:", error);
+    console.error(
+      "GET DIGITAL CARDS ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -412,7 +627,7 @@ export async function GET(request: NextRequest) {
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }

@@ -79,11 +79,24 @@ export interface GalleryCertificate {
 export interface DigitalCardData {
   _id?: string;
 
+  userId?: string | null;
+
   /*
-   * IMPORTANT:
-   * Selected template is now stored inside card state.
+   * PUBLIC USERNAME
+   *
+   * Example:
+   * /digitalvisitingcard/prince123
+   */
+  username: string;
+
+  /*
+   * SELECTED TEMPLATE
    */
   templateId: string;
+
+  /* =====================================================
+     BASIC DETAILS
+  ===================================================== */
 
   fullName: string;
   companyName: string;
@@ -93,6 +106,10 @@ export interface DigitalCardData {
   tagline: string;
   aboutCompany: string;
 
+  /* =====================================================
+     CONTACT DETAILS
+  ===================================================== */
+
   mobile: string;
   whatsapp: string;
   email: string;
@@ -100,9 +117,21 @@ export interface DigitalCardData {
   address: string;
   googleMapLink: string;
 
+  /* =====================================================
+     BUSINESS
+  ===================================================== */
+
   businessDetails: BusinessDetails;
 
+  /* =====================================================
+     SOCIAL
+  ===================================================== */
+
   socialLinks: SocialLinks;
+
+  /* =====================================================
+     GALLERY
+  ===================================================== */
 
   gallery: GalleryImage[];
 
@@ -110,21 +139,49 @@ export interface DigitalCardData {
 
   certificates: GalleryCertificate[];
 
+  /* =====================================================
+     DESIGN
+  ===================================================== */
+
   backgroundColor: string;
 
-  /*
-   * These fields are already being used by
-   * LivePreview / ActionSettingsPreview.
-   */
-  showCall?: boolean;
-  showWhatsapp?: boolean;
-  showEmail?: boolean;
-  showWebsite?: boolean;
-  showLocation?: boolean;
-  showCustomButton?: boolean;
+  /* =====================================================
+     ACTION SETTINGS
+  ===================================================== */
 
-  customButtonLabel?: string;
-  cardLink?: string;
+  showCall: boolean;
+  showWhatsapp: boolean;
+  showEmail: boolean;
+  showWebsite: boolean;
+  showLocation: boolean;
+  showCustomButton: boolean;
+
+  customButtonLabel: string;
+  customButtonLink: string;
+
+  /*
+   * Old compatibility field
+   */
+  cardLink: string;
+
+  /* =====================================================
+     SEO
+  ===================================================== */
+
+  seoVisible: boolean;
+
+  /* =====================================================
+     PASSWORD
+  ===================================================== */
+
+  passwordProtection: boolean;
+  cardPassword: string;
+
+  /* =====================================================
+     PUBLICATION
+  ===================================================== */
+
+  isPublished?: boolean;
 }
 
 /* =========================================================
@@ -134,13 +191,20 @@ export interface DigitalCardData {
 export const emptyCard: DigitalCardData = {
   _id: undefined,
 
+  userId: null,
+
+  /*
+   * IMPORTANT
+   * USERNAME MUST EXIST HERE
+   */
+  username: "",
+
   /*
    * DEFAULT TEMPLATE
-   *
-   * Change this only if your first template
-   * has a different ID.
    */
   templateId: "template-1",
+
+  /* BASIC DETAILS */
 
   fullName: "",
   companyName: "",
@@ -150,12 +214,16 @@ export const emptyCard: DigitalCardData = {
   tagline: "",
   aboutCompany: "",
 
+  /* CONTACT */
+
   mobile: "",
   whatsapp: "",
   email: "",
   website: "",
   address: "",
   googleMapLink: "",
+
+  /* BUSINESS */
 
   businessDetails: {
     businessName: "",
@@ -181,6 +249,8 @@ export const emptyCard: DigitalCardData = {
     },
   },
 
+  /* SOCIAL */
+
   socialLinks: {
     facebook: "",
     instagram: "",
@@ -191,13 +261,19 @@ export const emptyCard: DigitalCardData = {
     other: "",
   },
 
+  /* MEDIA */
+
   gallery: [],
 
   videos: [],
 
   certificates: [],
 
+  /* DESIGN */
+
   backgroundColor: "#17142E",
+
+  /* ACTION SETTINGS */
 
   showCall: true,
   showWhatsapp: true,
@@ -207,7 +283,22 @@ export const emptyCard: DigitalCardData = {
   showCustomButton: false,
 
   customButtonLabel: "",
+  customButtonLink: "",
+
   cardLink: "",
+
+  /* SEO */
+
+  seoVisible: true,
+
+  /* PASSWORD */
+
+  passwordProtection: false,
+  cardPassword: "",
+
+  /* PUBLICATION */
+
+  isPublished: false,
 };
 
 /* =========================================================
@@ -262,20 +353,25 @@ function normalizeGallery(
       if (
         item &&
         typeof item === "object" &&
-        typeof (item as any).url === "string"
+        typeof (item as GalleryImage).url ===
+          "string"
       ) {
-        const image = item as any;
+        const image =
+          item as GalleryImage;
 
         return {
           url: image.url,
 
-          ...(typeof image.publicId === "string"
+          ...(typeof image.publicId ===
+          "string"
             ? {
-                publicId: image.publicId,
+                publicId:
+                  image.publicId,
               }
             : {}),
 
-          ...(typeof image.name === "string"
+          ...(typeof image.name ===
+          "string"
             ? {
                 name: image.name,
               }
@@ -285,12 +381,14 @@ function normalizeGallery(
 
       return null;
     })
-   .filter(
-  (item): item is GalleryImage =>
-    item !== null &&
-    typeof item.url === "string" &&
-    item.url.trim().length > 0
-);
+    .filter(
+      (
+        item
+      ): item is GalleryImage =>
+        item !== null &&
+        typeof item.url === "string" &&
+        item.url.trim().length > 0
+    );
 }
 
 /* =========================================================
@@ -313,7 +411,8 @@ function normalizeVideos(
         return null;
       }
 
-      const item = video as any;
+      const item =
+        video as Partial<GalleryVideo>;
 
       return {
         id:
@@ -333,8 +432,11 @@ function normalizeVideos(
       };
     })
     .filter(
-      (video): video is GalleryVideo =>
-        Boolean(video)
+      (
+        video
+      ): video is GalleryVideo =>
+        Boolean(video) &&
+        video.url.trim().length > 0
     );
 }
 
@@ -358,7 +460,8 @@ function normalizeCertificates(
         return null;
       }
 
-      const item = certificate as any;
+      const item =
+        certificate as Partial<GalleryCertificate>;
 
       return {
         id:
@@ -379,13 +482,13 @@ function normalizeCertificates(
         url:
           typeof item.url === "string"
             ? item.url
-            : typeof item.file === "string"
-              ? item.file
-              : "",
+            : "",
 
-        ...(typeof item.publicId === "string"
+        ...(typeof item.publicId ===
+        "string"
           ? {
-              publicId: item.publicId,
+              publicId:
+                item.publicId,
             }
           : {}),
       };
@@ -395,9 +498,27 @@ function normalizeCertificates(
         certificate
       ): certificate is GalleryCertificate =>
         Boolean(certificate) &&
-        typeof certificate?.url === "string" &&
         certificate.url.trim().length > 0
     );
+}
+
+/* =========================================================
+   NORMALIZE USERNAME
+========================================================= */
+
+function normalizeUsername(
+  value: unknown
+): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 30);
 }
 
 /* =========================================================
@@ -416,7 +537,14 @@ function normalizeCard(
 
     /*
      * IMPORTANT:
-     * Always keep a valid template.
+     * Preserve username from API / ActionSettings
+     */
+    username: normalizeUsername(
+      source.username
+    ),
+
+    /*
+     * ALWAYS KEEP VALID TEMPLATE
      */
     templateId:
       typeof source.templateId === "string" &&
@@ -424,9 +552,7 @@ function normalizeCard(
         ? source.templateId
         : emptyCard.templateId,
 
-    /* =====================================================
-       BUSINESS DETAILS
-    ===================================================== */
+    /* BUSINESS DETAILS */
 
     businessDetails: {
       ...emptyCard.businessDetails,
@@ -465,9 +591,7 @@ function normalizeCard(
       },
     },
 
-    /* =====================================================
-       SOCIAL LINKS
-    ===================================================== */
+    /* SOCIAL LINKS */
 
     socialLinks: {
       ...emptyCard.socialLinks,
@@ -475,25 +599,19 @@ function normalizeCard(
       ...(source.socialLinks || {}),
     },
 
-    /* =====================================================
-       GALLERY
-    ===================================================== */
+    /* GALLERY */
 
     gallery: normalizeGallery(
       source.gallery
     ),
 
-    /* =====================================================
-       VIDEOS
-    ===================================================== */
+    /* VIDEOS */
 
     videos: normalizeVideos(
       source.videos
     ),
 
-    /* =====================================================
-       CERTIFICATES
-    ===================================================== */
+    /* CERTIFICATES */
 
     certificates:
       normalizeCertificates(
@@ -641,6 +759,15 @@ export function DigitalCardProvider({
                   initialData
                 );
 
+              /*
+               * DEBUG
+               * Check browser console
+               */
+              console.log(
+                "CREATING CARD WITH USERNAME:",
+                newCard.username
+              );
+
               const response =
                 await fetch(
                   "/api/digital-cards",
@@ -652,10 +779,12 @@ export function DigitalCardProvider({
                         "application/json",
                     },
 
-                    body:
-                      JSON.stringify(
-                        newCard
-                      ),
+                    /*
+                     * username is included here
+                     */
+                    body: JSON.stringify(
+                      newCard
+                    ),
                   }
                 );
 
@@ -733,33 +862,23 @@ export function DigitalCardProvider({
         key: K,
         value: DigitalCardData[K]
       ) => {
-        const currentCard =
-          card;
-
         const nextCard =
           normalizeCard({
-            ...currentCard,
-
+            ...card,
             [key]: value,
           });
 
         /*
-         * IMPORTANT:
-         *
-         * This immediately updates React state.
-         *
-         * Therefore:
-         *
-         * updateCard("templateId", "template-2")
-         *
-         * immediately causes LivePreview to render
-         * template-2.
+         * IMMEDIATELY UPDATE UI
          */
         setCard(nextCard);
 
         try {
           setSaving(true);
 
+          /*
+           * CREATE FIRST CARD
+           */
           if (!cardId) {
             await createCard(
               nextCard
@@ -768,6 +887,9 @@ export function DigitalCardProvider({
             return;
           }
 
+          /*
+           * UPDATE ONLY CHANGED FIELD
+           */
           const response =
             await fetch(
               `/api/digital-cards/${cardId}`,
@@ -779,10 +901,10 @@ export function DigitalCardProvider({
                     "application/json",
                 },
 
-                body:
-                  JSON.stringify({
-                    [key]: value,
-                  }),
+                body: JSON.stringify({
+                  [key]:
+                    nextCard[key],
+                }),
               }
             );
 
@@ -803,6 +925,18 @@ export function DigitalCardProvider({
             throw new Error(
               data.message ||
                 "Failed to save card"
+            );
+          }
+
+          /*
+           * UPDATE LOCAL STATE WITH
+           * SERVER RESPONSE
+           */
+          if (data.card) {
+            setCard(
+              normalizeCard(
+                data.card
+              )
             );
           }
         } catch (error) {
@@ -831,9 +965,22 @@ export function DigitalCardProvider({
         try {
           setSaving(true);
 
+          const normalizedCard =
+            normalizeCard(card);
+
+          console.log(
+            "SAVING CARD:",
+            normalizedCard
+          );
+
+          console.log(
+            "SAVING USERNAME:",
+            normalizedCard.username
+          );
+
           if (!cardId) {
             await createCard(
-              card
+              normalizedCard
             );
 
             return;
@@ -850,10 +997,12 @@ export function DigitalCardProvider({
                     "application/json",
                 },
 
-                body:
-                  JSON.stringify(
-                    card
-                  ),
+                /*
+                 * SEND COMPLETE CARD
+                 */
+                body: JSON.stringify(
+                  normalizedCard
+                ),
               }
             );
 
@@ -910,15 +1059,10 @@ export function DigitalCardProvider({
     <DigitalCardContext.Provider
       value={{
         card,
-
         updateCard,
-
         saveCard,
-
         loading,
-
         saving,
-
         cardId,
       }}
     >
